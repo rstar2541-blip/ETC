@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bridge deck running into the distance between two towers. Safe zone is 21..87. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#A9A49D" android:pathData="M26,86 L82,86 L60,42 L48,42 Z" />
+    <path android:fillColor="#C99A2E" android:pathData="M26,86 L31,86 L49,42 L48,42 Z M82,86 L77,86 L59,42 L60,42 Z" />
+    <path android:fillColor="#F2E3A6" android:pathData="M53,80 L55,80 L54.6,70 L53.4,70 Z M53.6,64 L54.4,64 L54.2,57 L53.8,57 Z" />
+    <path android:fillColor="#E8EDF3" android:pathData="M33,24 L39,24 L39,74 L33,74 Z M69,24 L75,24 L75,74 L69,74 Z M33,28 L75,28 L75,33 L33,33 Z" />
+    <path android:fillColor="#2F74FF" android:pathData="M50,78 a4,4 0 1,1 8,0 l0,8 l-8,0 Z" />
+    <path android:fillColor="#E8453B" android:pathData="M51,50 a3,3 0 1,1 6,0 l0,5 l-6,0 Z" />
+</vector>

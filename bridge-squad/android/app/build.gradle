@@ -1,0 +1,63 @@
+plugins {
+    id 'com.android.application'
+}
+
+// GitHub Actions run number becomes the version, so every new APK installs over the old one.
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
+// The game itself lives in ../../index.html; it is copied into the APK's assets at build time.
+def gameAssetsDir = new File(project.buildDir, 'generated/gameAssets')
+
+android {
+    namespace 'com.bridgesquad.game'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.bridgesquad.game'
+        minSdk 26
+        targetSdk 34
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    signingConfigs {
+        release {
+            // A private key from GitHub secrets wins; otherwise the bundled hobby key is used.
+            storeFile file(System.getenv('BS_KEYSTORE_FILE') ?: '../keystore/bridge-squad.jks')
+            storePassword System.getenv('BS_KEYSTORE_PASSWORD') ?: 'bridgesquad'
+            keyAlias System.getenv('BS_KEY_ALIAS') ?: 'bridgesquad'
+            keyPassword System.getenv('BS_KEY_PASSWORD') ?: 'bridgesquad'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += [gameAssetsDir]
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+    }
+}
+
+def copyGame = tasks.register('copyGame', Copy) {
+    from('../../index.html')
+    into(new File(gameAssetsDir, 'www'))
+}
+preBuild.dependsOn(copyGame)
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

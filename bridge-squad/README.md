@@ -13,7 +13,15 @@
 - **좀비**: 스쿼드에 닿으면 대원을 잃어요. 스테이지 2부터 빠른 좀비, 4부터 덩치 큰 좀비가 나와요.
 - **보스**: 스테이지 끝에서 거대 좀비가 다가와 내려찍기로 대원을 쓸어버려요. 쓰러뜨리면 다음 스테이지로.
 
-스테이지가 오를수록 좀비가 많아지고 단단해집니다. 최고 기록은 브라우저에 저장돼요.
+스테이지가 오를수록 좀비가 많아지고 단단해집니다.
+
+## 저장
+
+- 스테이지를 클리어하면 다음 스테이지와 점수가 자동 저장돼요.
+- 스테이지에서 전멸하면 그 스테이지를 깰 때까지 같은 스테이지부터 다시 시작해요. 실패한 판에서 얻은 점수는 저장되지 않아요.
+- 앱(또는 브라우저)을 껐다 켜도 메뉴의 **이어하기**로 저장된 스테이지부터 계속할 수 있어요.
+- **처음부터**는 두 번 눌러야 저장이 지워져요.
+- 게임 중 일시정지(II 버튼, 안드로이드 뒤로가기, 앱 전환 시 자동)도 있어요.
 
 ## 실행
 
@@ -21,4 +29,37 @@
 # 그냥 파일을 열어도 되고, 로컬 서버로 띄워도 됩니다
 python3 -m http.server -d bridge-squad 8000
 # http://localhost:8000
+```
+
+## 안드로이드 앱 (APK)
+
+`android/` 폴더는 이 게임을 전체화면 WebView로 띄우는 안드로이드 앱이에요. 빌드할 때 `index.html`이 앱 안에 복사되니 게임 수정은 `index.html`만 고치면 돼요.
+
+### APK 받기
+
+`bridge-squad/` 아래가 바뀌어 푸시되면 GitHub Actions(`.github/workflows/bridge-squad-apk.yml`)가 APK를 빌드해서 **Releases**에 올려요.
+
+1. 폰에서 이 저장소의 **Releases** 페이지를 열어요.
+2. 최신 `브릿지 스쿼드 v1.0.N`의 `bridge-squad-v1.0.N.apk`를 내려받아요.
+3. 설치할 때 "출처를 알 수 없는 앱 설치"를 허용해 주세요.
+
+새 버전은 기존 앱 위에 덮어 설치되고 저장 데이터는 유지돼요.
+
+### 서명 키
+
+공개 저장소에 들어 있는 `android/keystore/bridge-squad.jks`(비밀번호 `bridgesquad`)로 서명해요. 개인용으로 설치해 쓰기엔 충분하지만, 플레이 스토어에 올리거나 다른 사람에게 배포하려면 직접 만든 키를 GitHub Secrets에 넣어 주세요.
+
+- `BS_KEYSTORE_BASE64`: `base64 -w0 my.jks` 결과
+- `BS_KEYSTORE_PASSWORD`, `BS_KEY_ALIAS`, `BS_KEY_PASSWORD`
+
+키를 바꾸면 서명이 달라져서 기존 앱을 지우고 새로 설치해야 해요. 이때 저장 데이터도 지워져요.
+
+### 직접 빌드
+
+Android SDK와 JDK 17이 있으면:
+
+```bash
+cd bridge-squad/android
+gradle assembleRelease
+# app/build/outputs/apk/release/app-release.apk
 ```
