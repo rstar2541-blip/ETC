@@ -2,3 +2,4 @@ mediapipe>=0.10.14   # 얼굴 랜드마크·표정(블렌드셰이프). OpenCV(o
 numpy
 pillow>=10
 pillow-heif          # 아이폰 HEIC 사진용 (없어도 JPG/PNG는 동작)
+PySide6-Essentials   # 프로그램 화면 (photo_cull_app.py). 터미널 버전만 쓰면 없어도 됨

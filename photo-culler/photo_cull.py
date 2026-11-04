@@ -31,6 +31,7 @@ import html
 import json
 import shutil
 import sys
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -53,7 +54,8 @@ except ImportError:
 Image.MAX_IMAGE_PIXELS = 300_000_000
 
 HERE = Path(__file__).resolve().parent
-MODEL_DIR = HERE / "models"
+# PyInstaller로 묶은 프로그램이면 함께 들어 있는 models 폴더를 사용
+MODEL_DIR = Path(getattr(sys, "_MEIPASS", HERE)) / "models"
 YUNET_FILE = "face_detection_yunet_2023mar.onnx"
 LANDMARKER_FILE = "face_landmarker.task"
 MODEL_SOURCES = {
@@ -160,6 +162,7 @@ class PhotoResult:
     error: str = ""
     taken: str = ""
     size: tuple = (0, 0)
+    work_size: tuple = (0, 0)   # 분석용으로 줄인 크기 (faces 의 box 좌표 기준)
     scene_sharp: float = 0.0
     face_focus: float | None = None
     n_faces: int = 0
@@ -172,18 +175,23 @@ class PhotoResult:
     burst_best: str = ""
     thumb: str = ""
     faces: list = field(default_factory=list)  # 얼굴별 측정값 (results.json 디버깅용)
+    manual: bool = False  # 사용자가 판정을 직접 바꿨는지
 
 
 # ----------------------------------------------------------------------------
 # 모델 준비
 # ----------------------------------------------------------------------------
-def ensure_models() -> None:
+class ModelError(RuntimeError):
+    pass
+
+
+def ensure_models(log=print) -> None:
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     for name, urls in MODEL_SOURCES.items():
         dest = MODEL_DIR / name
         if dest.exists() and dest.stat().st_size > 100_000:
             continue
-        print(f"모델 다운로드 중: {name}")
+        log(f"모델 다운로드 중: {name}")
         last_err = None
         for url in urls:
             try:
@@ -198,8 +206,8 @@ def ensure_models() -> None:
             except Exception as e:  # noqa: BLE001
                 last_err = e
         else:
-            sys.exit(f"모델 다운로드 실패: {name} ({last_err})\n"
-                     f"직접 받아서 {dest} 에 넣어 주세요: {urls[0]}")
+            raise ModelError(f"모델 다운로드 실패: {name} ({last_err})\n"
+                             f"직접 받아서 {dest} 에 넣어 주세요: {urls[0]}")
 
 
 # ----------------------------------------------------------------------------
@@ -338,6 +346,7 @@ class Analyzer:
         r.taken = taken.isoformat(timespec="seconds") + ("" if taken_src == "exif" else "~")
         r.size = orig
         h, w = bgr.shape[:2]
+        r.work_size = (w, h)
         gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
         r.dhash = f"{dhash(gray):016x}"
 
@@ -554,6 +563,47 @@ def _work(args):
         return r
 
 
+def analyze_threaded(root: Path, files: list[Path], th: Thresholds, thumbs_dir: Path | None,
+                     workers: int, on_result, should_stop=lambda: False) -> None:
+    """스레드로 병렬 분석 (GUI용). OpenCV·MediaPipe 는 계산 중 GIL 을 풀기 때문에 스레드로도 빨라진다.
+    각 스레드가 자기 Analyzer 를 갖고, 결과는 on_result(PhotoResult) 로 하나씩 전달."""
+    local = threading.local()
+    made: list[Analyzer] = []
+    lock = threading.Lock()
+
+    def job(args):
+        if should_stop():
+            return None
+        a = getattr(local, "a", None)
+        if a is None:
+            a = local.a = Analyzer(th, thumbs_dir)
+            with lock:
+                made.append(a)
+        root_, path, idx = args
+        try:
+            return a.analyze(root_, path, idx)
+        except Exception as e:  # noqa: BLE001
+            r = PhotoResult(path=path.relative_to(root_).as_posix(), ok=False, error=str(e), verdict="review")
+            r.issues.append(["error", "review", f"분석 오류: {e}"])
+            return r
+
+    jobs = [(root, p, i) for i, p in enumerate(files)]
+    try:
+        with cf.ThreadPoolExecutor(max(1, workers)) as ex:
+            futs = [ex.submit(job, j) for j in jobs]
+            for f in cf.as_completed(futs):
+                r = f.result()
+                if r is not None:
+                    on_result(r)
+                if should_stop():
+                    for x in futs:
+                        x.cancel()
+                    break
+    finally:
+        for a in made:
+            a.close()
+
+
 def find_images(root: Path, recursive: bool) -> list[Path]:
     it = root.rglob("*") if recursive else root.iterdir()
     files = []
@@ -708,49 +758,80 @@ chips.forEach(c=>c.onclick=()=>{{chips.forEach(x=>x.classList.toggle('on',x===c)
     return p
 
 
+def save_reports(root: Path, results: list[PhotoResult], th: Thresholds) -> Path:
+    out = root / OUT_DIR_NAME
+    out.mkdir(parents=True, exist_ok=True)
+    write_csv(out, results)
+    (out / "results.json").write_text(
+        json.dumps([asdict(r) for r in results], ensure_ascii=False, indent=1), encoding="utf-8")
+    return write_html(out, root, results, th)
+
+
+def load_results(root: Path) -> list[PhotoResult] | None:
+    p = root / OUT_DIR_NAME / "results.json"
+    if not p.exists():
+        return None
+    try:
+        names = set(PhotoResult.__dataclass_fields__)
+        return [PhotoResult(**{k: v for k, v in d.items() if k in names})
+                for d in json.loads(p.read_text(encoding="utf-8"))]
+    except Exception:  # noqa: BLE001
+        return None
+
+
 # ----------------------------------------------------------------------------
 # 파일 이동 / 되돌리기
 # ----------------------------------------------------------------------------
-def apply_moves(root: Path, include_review: bool = True) -> None:
-    out = root / OUT_DIR_NAME
-    report = out / "report.csv"
+def read_report_verdicts(root: Path) -> dict[str, str]:
+    report = root / OUT_DIR_NAME / "report.csv"
     if not report.exists():
-        sys.exit(f"리포트가 없습니다: {report}\n먼저 scan 을 실행하세요.")
-    log_path = out / "moves.json"
-    log = json.loads(log_path.read_text(encoding="utf-8")) if log_path.exists() else []
-    moved = {k: 0 for k in MOVE_FOLDERS}
+        raise FileNotFoundError(f"리포트가 없습니다: {report}\n먼저 scan 을 실행하세요.")
     try:
         with open(report, encoding="utf-8-sig") as f:
             rows = list(csv.DictReader(f))
     except UnicodeDecodeError:  # 엑셀에서 'CSV(쉼표로 분리)'로 저장하면 CP949
         with open(report, encoding="cp949") as f:
             rows = list(csv.DictReader(f))
-    for row in rows:
-        verdict = KO_VERDICT.get(row["판정"].strip())
-        if verdict not in MOVE_FOLDERS or (verdict == "review" and not include_review):
-            continue
-        src = root / row["파일"]
-        if not src.exists():
-            continue
-        dst = out / MOVE_FOLDERS[verdict] / row["파일"]
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        n = 1
-        while dst.exists():
-            dst = dst.with_name(f"{dst.stem}_{n}{dst.suffix}")
-            n += 1
-        shutil.move(str(src), str(dst))
-        log.append({"from": str(src.relative_to(root)), "to": str(dst.relative_to(root))})
-        moved[verdict] += 1
-    log_path.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
-    print("이동 완료: " + ", ".join(f"{MOVE_FOLDERS[k]} {v}장" for k, v in moved.items()))
-    print(f"위치: {out}")
-    print("되돌리려면: python photo_cull.py undo " + str(root))
+    return {row["파일"]: KO_VERDICT.get(row["판정"].strip(), "keep") for row in rows}
 
 
-def undo_moves(root: Path) -> None:
+def apply_moves(root: Path, verdicts: dict[str, str], categories=("reject", "review", "burst")) -> dict:
+    """verdicts = {상대경로: 판정}. 지정한 판정의 사진을 _사진정리/<분류폴더> 로 옮긴다.
+    반환: {"moved": {판정: 장수}, "map": {원래 상대경로: 새 상대경로}}"""
+    out = root / OUT_DIR_NAME
+    log_path = out / "moves.json"
+    log = json.loads(log_path.read_text(encoding="utf-8")) if log_path.exists() else []
+    moved = {k: 0 for k in MOVE_FOLDERS}
+    mapping = {}
+    try:
+        for rel, verdict in verdicts.items():
+            if verdict not in MOVE_FOLDERS or verdict not in categories:
+                continue
+            src = root / rel
+            if not src.exists():
+                continue
+            dst = out / MOVE_FOLDERS[verdict] / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            n = 1
+            while dst.exists():
+                dst = dst.with_name(f"{dst.stem}_{n}{dst.suffix}")
+                n += 1
+            shutil.move(str(src), str(dst))
+            new_rel = dst.relative_to(root).as_posix()
+            log.append({"from": Path(rel).as_posix(), "to": new_rel})
+            mapping[rel] = new_rel
+            moved[verdict] += 1
+    finally:  # 중간에 오류가 나도 지금까지 옮긴 기록은 남겨서 되돌릴 수 있게
+        out.mkdir(parents=True, exist_ok=True)
+        log_path.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+    return {"moved": moved, "map": mapping}
+
+
+def undo_moves(root: Path) -> tuple[int, int]:
+    """이동 기록을 거꾸로 되돌린다. 반환: (되돌린 장수, 되돌리지 못한 장수)"""
     log_path = root / OUT_DIR_NAME / "moves.json"
     if not log_path.exists():
-        sys.exit("되돌릴 이동 기록이 없습니다.")
+        return 0, 0
     log = json.loads(log_path.read_text(encoding="utf-8"))
     left, n = [], 0
     for m in reversed(log):
@@ -771,14 +852,36 @@ def undo_moves(root: Path) -> None:
                     d.rmdir()
             if not any(base.iterdir()):
                 base.rmdir()
-    print(f"{n}장을 원래 위치로 되돌렸습니다." + (f" ({len(left)}장은 되돌리지 못함)" if left else ""))
+    return n, len(left)
 
 
 # ----------------------------------------------------------------------------
 # scan
 # ----------------------------------------------------------------------------
+def cli_apply(root: Path, include_review: bool) -> None:
+    try:
+        verdicts = read_report_verdicts(root)
+    except FileNotFoundError as e:
+        sys.exit(str(e))
+    cats = ("reject", "review", "burst") if include_review else ("reject", "burst")
+    res = apply_moves(root, verdicts, cats)
+    print("이동 완료: " + ", ".join(f"{MOVE_FOLDERS[k]} {v}장" for k, v in res["moved"].items()))
+    print(f"위치: {root / OUT_DIR_NAME}")
+    print("되돌리려면: python photo_cull.py undo " + str(root))
+
+
+def cli_undo(root: Path) -> None:
+    n, left = undo_moves(root)
+    if n == 0 and left == 0:
+        sys.exit("되돌릴 이동 기록이 없습니다.")
+    print(f"{n}장을 원래 위치로 되돌렸습니다." + (f" ({left}장은 되돌리지 못함)" if left else ""))
+
+
 def scan(root: Path, recursive: bool, workers: int, sensitivity: str, move: bool) -> None:
-    ensure_models()
+    try:
+        ensure_models()
+    except ModelError as e:
+        sys.exit(str(e))
     th = Thresholds.for_sensitivity(sensitivity)
     out = root / OUT_DIR_NAME
     thumbs = out / "thumbs"
@@ -815,17 +918,14 @@ def scan(root: Path, recursive: bool, workers: int, sensitivity: str, move: bool
                 report_progress(r)
 
     group_bursts(results, th)
-    write_csv(out, results)
-    page = write_html(out, root, results, th)
-    (out / "results.json").write_text(
-        json.dumps([asdict(r) for r in results], ensure_ascii=False, indent=1), encoding="utf-8")
+    page = save_reports(root, results, th)
 
     c = {k: sum(1 for r in results if r.verdict == k) for k in VERDICT_KO}
     print(f"\n완료 ({time.time() - t0:.0f}초): 불량 {c['reject']} · 확인필요 {c['review']} · "
           f"연사중복 {c['burst']} · 정상 {c['keep']}")
     print(f"리포트: {page}")
     if move:
-        apply_moves(root)
+        cli_apply(root, include_review=True)
     else:
         print("판정대로 정리하려면: python photo_cull.py apply " + str(root)
               + "\n(report.csv 의 '판정' 열을 엑셀에서 고친 뒤 apply 하면 고친 대로 이동합니다)")
@@ -854,9 +954,9 @@ def main(argv=None):
     if args.cmd == "scan":
         scan(root, args.recursive, args.workers, args.sensitivity, args.move)
     elif args.cmd == "apply":
-        apply_moves(root, include_review=not args.skip_review)
+        cli_apply(root, include_review=not args.skip_review)
     else:
-        undo_moves(root)
+        cli_undo(root)
 
 
 if __name__ == "__main__":

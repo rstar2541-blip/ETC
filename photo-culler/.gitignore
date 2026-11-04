@@ -1,3 +1,7 @@
 models/
 __pycache__/
 .venv/
+build/
+dist/
+testdata/
+selftest.json

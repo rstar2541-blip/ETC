@@ -1,0 +1,12 @@
+# 프로그램(exe / app) 빌드용.
+# mediapipe 는 GUI 없는 OpenCV 를 쓰려고 따로 설치합니다:  pip install --no-deps mediapipe==1.2.2
+absl-py
+certifi
+flatbuffers
+matplotlib
+numpy
+opencv-python-headless==5.0.0.93
+pillow
+pillow-heif
+PySide6-Essentials==6.12.0
+pyinstaller==6.22.3

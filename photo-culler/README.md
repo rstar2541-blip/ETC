@@ -1,9 +1,45 @@
-# Photo Culler — 불완전한 사진 골라내기
+# 사진 정리 (Photo Culler) — 불완전한 사진 골라내기
 
 사진이 너무 많을 때, **초점이 나간 사진 · 눈 감은 사진 · 표정이 어색한 사진 · 연사로 찍은 비슷한 사진**을
-자동으로 골라 분류해 주는 도구입니다.
+자동으로 골라 분류해 주는 프로그램입니다.
 모든 분석은 **내 컴퓨터에서만** 이루어지고 사진이 외부로 업로드되지 않습니다.
-사진을 **삭제하지 않고** 폴더로 옮기기만 하며, 언제든 `undo` 로 되돌릴 수 있습니다.
+사진을 **삭제하지 않고** 폴더로 옮기기만 하며, 언제든 **되돌리기** 할 수 있습니다.
+
+## 프로그램 받기
+
+저장소의 **Releases** 에서 최신 `사진 정리 (Photo Culler)` 를 열고 Assets 에서 받으세요.
+(`photo-culler/` 가 바뀌어 푸시될 때마다 GitHub Actions 가 자동으로 새로 빌드합니다.)
+
+| 컴퓨터 | 파일 | 실행 |
+|---|---|---|
+| Windows 10/11 | `PhotoCuller-Windows.zip` | 압축 풀고 `PhotoCuller\PhotoCuller.exe` 실행. "PC 보호" 창이 뜨면 **추가 정보 → 실행** |
+| Mac (Apple 칩, macOS 14+) | `PhotoCuller-macOS.zip` | 압축 풀고 `PhotoCuller.app` 을 **우클릭 → 열기**. 안 열리면 터미널에서 `xattr -cr PhotoCuller.app` |
+
+## 사용법
+
+1. **폴더 선택** (또는 창에 폴더를 끌어다 놓기) → 바로 분석이 시작됩니다.
+2. 위쪽 탭 **불량 / 확인필요 / 연사중복 / 정상** 으로 결과를 봅니다.
+   - 사진을 누르면 오른쪽에 크게 보이고, 얼굴마다 테두리(빨강=눈 감음, 주황=확인 필요)와 이유가 나옵니다.
+   - 판정이 틀렸으면 아래 버튼이나 **숫자키 1~4** 로 바꿉니다 (1 불량 · 2 확인필요 · 3 연사중복 · 4 남기기).
+     바꾸면 다음 사진으로 넘어가서 키보드로 빠르게 훑을 수 있습니다. 여러 장을 선택해 한꺼번에 바꿀 수도 있습니다.
+   - **Enter** 또는 더블클릭 = 원본 열기
+3. **정리하기** → 사진 폴더 안 `_사진정리` 폴더로 분류해서 옮깁니다.
+
+```
+내 사진 폴더/
+├── (정상 사진은 그대로)
+└── _사진정리/
+    ├── 1_불량/        ← 확인 후 지워도 되는 사진
+    ├── 2_확인필요/     ← 애매해서 사람 눈으로 봐야 하는 사진
+    ├── 3_연사중복/     ← 비슷한 사진 중 베스트가 아닌 컷
+    ├── report.html    ← 브라우저용 리포트
+    └── report.csv     ← 엑셀용 표
+```
+
+4. 마음에 안 들면 **되돌리기** 로 전부 원래 자리로 돌아갑니다.
+
+같은 폴더를 다시 열면 이전 분석 결과와 직접 바꾼 판정을 그대로 불러옵니다.
+너무 많이/적게 걸러지면 **민감도**(느슨하게 / 보통 / 엄격하게)를 바꿔서 다시 분석하세요.
 
 ## 무엇을 검사하나
 
@@ -23,88 +59,6 @@
 단체 사진에서는 배경의 작은 얼굴(지나가는 사람 등)은 무시하고, 주요 인물만 봅니다.
 여러 명 중 일부만 눈을 감았으면 `눈 감음 (1/6명)` 처럼 인원수를 함께 알려 줍니다.
 
-## 설치
-
-Python 3.9 이상이 필요합니다. (mediapipe 설치가 안 되면 Python 3.11 또는 3.12를 권장)
-
-```bash
-cd photo-culler
-python -m venv .venv
-```
-
-Windows:
-
-```bash
-.venv\Scripts\activate
-```
-
-macOS / Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-```bash
-pip install -r requirements.txt
-```
-
-처음 실행할 때 얼굴 인식 모델 2개(약 4MB)를 `models/` 폴더에 자동으로 받습니다.
-
-## 사용법
-
-### 1) 분석 — 파일은 그대로 두고 리포트만 만듭니다
-
-```bash
-python photo_cull.py scan "D:\사진\2026 제주여행"
-```
-
-하위 폴더까지 보려면 `-r`:
-
-```bash
-python photo_cull.py scan "D:\사진" -r
-```
-
-끝나면 사진 폴더 안에 `_사진정리/` 가 생깁니다.
-
-- `report.html` — 브라우저로 열면 **불량 / 확인필요 / 연사중복 / 정상** 탭으로 썸네일과 이유가 보입니다.
-  얼굴에 테두리가 그려져 있어 **누가** 눈을 감았는지 바로 보입니다. 썸네일을 누르면 원본이 열립니다.
-- `report.csv` — 엑셀로 열 수 있는 표. **`판정` 열을 직접 고치면** 다음 단계에서 고친 대로 옮겨집니다.
-  (`불량`, `확인필요`, `연사중복`, `정상` 중 하나)
-
-### 2) 정리 — 판정대로 폴더 이동
-
-```bash
-python photo_cull.py apply "D:\사진\2026 제주여행"
-```
-
-```
-2026 제주여행/
-├── (정상 사진은 그대로)
-└── _사진정리/
-    ├── 1_불량/        ← 확인 후 지워도 되는 사진
-    ├── 2_확인필요/     ← 애매해서 사람 눈으로 봐야 하는 사진
-    ├── 3_연사중복/     ← 비슷한 사진 중 베스트가 아닌 컷
-    ├── report.html
-    └── report.csv
-```
-
-'확인필요'는 옮기지 않으려면 `--skip-review`.
-분석과 이동을 한 번에 하려면 `scan ... --move`.
-
-### 3) 되돌리기
-
-```bash
-python photo_cull.py undo "D:\사진\2026 제주여행"
-```
-
-### 옵션
-
-| 옵션 | 설명 |
-|---|---|
-| `-r` | 하위 폴더 포함 |
-| `-s high` / `-s low` | 민감도. `high` = 더 엄격하게(더 많이 걸러냄), `low` = 확실한 것만 |
-| `-w 4` | 동시에 처리할 작업자 수 (기본: CPU 코어 수 - 1, 최대 4) |
-
 속도: 1200만 화소 사진 기준 1장당 약 0.1초 (4코어). 1,000장이면 2분 남짓.
 
 ## 휴대폰 사진은?
@@ -115,8 +69,7 @@ python photo_cull.py undo "D:\사진\2026 제주여행"
 
 ## 한계 (알아 두면 좋은 점)
 
-- 판정 기준은 휴리스틱입니다. 처음에는 `apply` 전에 `report.html`로 결과를 훑어보고,
-  너무 많이/적게 걸러지면 `-s low` / `-s high`로 조절하세요.
+- 판정 기준은 휴리스틱입니다. 처음에는 정리하기 전에 결과를 훑어보세요.
 - **아래를 보는 눈**과 **감은 눈**은 사진만으로 구분이 어려워 '확인필요'로 분류합니다.
   환하게 웃어서 눈이 감긴 사진도 일부러 남기는 경우가 많아 '확인필요'로 둡니다.
 - 얼굴이 아주 작으면(사진 긴 변 2000px 기준 폭 48px 미만) 표정·눈은 판정하지 않습니다.
@@ -124,7 +77,84 @@ python photo_cull.py undo "D:\사진\2026 제주여행"
 - 하늘·벽처럼 무늬가 거의 없는 사진은 '흐림'으로 잘못 잡힐 수 있습니다.
 - RAW 파일(CR2/NEF/ARW/DNG)과 동영상은 지원하지 않습니다.
 
-## 사용한 모델
+---
+
+## 개발자용
+
+### 소스에서 실행
+
+Python 3.10 이상.
+
+```bash
+cd photo-culler
+python -m venv .venv
+```
+
+Windows는 `.venv\Scripts\activate`, macOS/Linux는 `source .venv/bin/activate` 후:
+
+```bash
+pip install -r requirements.txt
+```
+
+```bash
+python photo_cull_app.py
+```
+
+처음 실행할 때 얼굴 인식 모델 2개(약 4MB)를 `models/` 폴더에 자동으로 받습니다.
+
+### 터미널 버전
+
+화면 없이 같은 엔진을 쓰는 명령줄 버전도 있습니다.
+
+```bash
+python photo_cull.py scan "D:\사진\2026 제주여행" -r
+```
+
+```bash
+python photo_cull.py apply "D:\사진\2026 제주여행"
+```
+
+```bash
+python photo_cull.py undo "D:\사진\2026 제주여행"
+```
+
+옵션: `-r` 하위 폴더 포함, `-s low|normal|high` 민감도, `-w 4` 동시 작업 수,
+`apply --skip-review` '확인필요'는 옮기지 않음. `report.csv` 의 `판정` 열을 엑셀에서 고친 뒤
+`apply` 하면 고친 대로 옮깁니다.
+
+### 직접 빌드
+
+`.github/workflows/photo-culler-build.yml` 과 같은 순서입니다.
+
+```bash
+pip install --no-deps mediapipe==1.2.2
+```
+
+```bash
+pip install -r requirements-build.txt
+```
+
+```bash
+python -c "import photo_cull; photo_cull.ensure_models()"
+```
+
+```bash
+pyinstaller --noconfirm photo_culler.spec
+```
+
+결과물은 `dist/PhotoCuller/` (macOS는 `dist/PhotoCuller.app`).
+빌드한 프로그램이 제대로 도는지는 `PhotoCuller --selftest <사진폴더> <결과.json>` 으로 확인할 수 있습니다.
+
+### 파일 구성
+
+| 파일 | 내용 |
+|---|---|
+| `photo_cull.py` | 분석 엔진 + 터미널 버전 |
+| `photo_cull_app.py` | 프로그램 화면 (PySide6) |
+| `photo_culler.spec` | PyInstaller 빌드 설정 |
+| `assets/` | 앱 아이콘 |
+
+### 사용한 모델
 
 - 얼굴 검출: [OpenCV YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) (MIT)
 - 얼굴 랜드마크·표정: [MediaPipe Face Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker) (Apache 2.0)
