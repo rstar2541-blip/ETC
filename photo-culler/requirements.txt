@@ -1,0 +1,4 @@
+mediapipe>=0.10.14   # 얼굴 랜드마크·표정(블렌드셰이프). OpenCV(opencv-contrib-python)도 함께 설치됨
+numpy
+pillow>=10
+pillow-heif          # 아이폰 HEIC 사진용 (없어도 JPG/PNG는 동작)
