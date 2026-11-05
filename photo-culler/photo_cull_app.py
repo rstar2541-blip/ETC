@@ -36,13 +36,15 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup, QC
 import photo_cull as pc
 
 APP_TITLE = "사진 정리"
-VERDICTS = ["reject", "review", "burst", "keep"]
+VERDICTS = ["reject", "review", "burst", "screenshot", "keep"]
 ORDER = {v: i for i, v in enumerate(VERDICTS)}
-COLORS = {"reject": "#d93a3a", "review": "#d98a00", "burst": "#3d6fd9", "keep": "#2f9a57"}
-SEV_COLORS = {"reject": "#d93a3a", "review": "#c27c00", "burst": "#3d6fd9", "info": "#888888"}
+COLORS = {"reject": "#d93a3a", "review": "#d98a00", "burst": "#3d6fd9", "screenshot": "#159a9c", "keep": "#2f9a57"}
+SEV_COLORS = {"reject": "#d93a3a", "review": "#c27c00", "burst": "#3d6fd9", "screenshot": "#159a9c",
+              "info": "#888888"}
 SENSITIVITY = [("느슨하게 — 확실한 것만", "low"), ("보통", "normal"), ("엄격하게 — 더 많이 걸러냄", "high")]
-VERDICT_KEYS = {"reject": "1", "review": "2", "burst": "3", "keep": "4"}
-VERDICT_BUTTON = {"reject": "불량", "review": "확인필요", "burst": "연사중복", "keep": "남기기(정상)"}
+VERDICT_KEYS = {"reject": "1", "review": "2", "burst": "3", "keep": "4", "screenshot": "5"}
+VERDICT_BUTTON = {"reject": "불량", "review": "확인필요", "burst": "연사중복", "screenshot": "스크린샷",
+                  "keep": "남기기"}
 
 
 def resource(name: str) -> Path:
@@ -285,7 +287,7 @@ class CardDelegate(QStyledItemDelegate):
         p.setFont(opt.font)
         fm2 = QFontMetrics(opt.font)
         p.setPen(pal.placeholderText().color())
-        right = "이동됨" if self.win.is_moved(r) else f"{r.score:.0f}점"
+        right = "이동됨" if self.win.is_moved(r) else "" if r.verdict == "screenshot" else f"{r.score:.0f}점"
         p.drawText(QRect(th.x(), y, th.width(), badge.height()),
                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, right)
 
@@ -367,9 +369,9 @@ class ApplyDialog(QDialog):
         info.setWordWrap(True)
         lay.addWidget(info)
         self.boxes = {}
-        for v in ("reject", "review", "burst"):
+        for v in ("reject", "review", "burst", "screenshot"):
             cb = QCheckBox(f"{pc.VERDICT_KO[v]} {counts.get(v, 0)}장  →  {pc.MOVE_FOLDERS[v]}")
-            cb.setChecked(counts.get(v, 0) > 0)
+            cb.setChecked(counts.get(v, 0) > 0 and v != "screenshot")  # 스크린샷은 원할 때만
             cb.setEnabled(counts.get(v, 0) > 0)
             lay.addWidget(cb)
             self.boxes[v] = cb
@@ -485,7 +487,7 @@ class MainWindow(QMainWindow):
             b.clicked.connect(lambda _=False, k=key: self.set_filter(k))
         self.filter_btns["all"].setChecked(True)
         tabs.addStretch(1)
-        hint = QLabel("단축키  1 불량 · 2 확인필요 · 3 연사중복 · 4 남기기 · Del 삭제(휴지통) · Enter 원본 열기")
+        hint = QLabel("단축키  1 불량 · 2 확인필요 · 3 연사중복 · 4 남기기 · 5 스크린샷 · Del 삭제(휴지통) · Enter 원본 열기")
         hint.setStyleSheet("color: gray")
         tabs.addWidget(hint)
         outer.addLayout(tabs)
@@ -550,10 +552,10 @@ class MainWindow(QMainWindow):
         dl.addWidget(self.lbl_detail, 1)
         vb = QHBoxLayout()
         self.verdict_btns = {}
-        for v in VERDICTS:
+        for v in sorted(VERDICTS, key=lambda x: VERDICT_KEYS[x]):  # 버튼은 단축키 번호 순서
             b = QPushButton(f"{VERDICT_BUTTON[v]}  {VERDICT_KEYS[v]}")
             b.setStyleSheet(f"QPushButton {{ color: white; background: {COLORS[v]}; border: none;"
-                            " border-radius: 6px; padding: 7px 6px; font-weight: 600; }"
+                            " border-radius: 6px; padding: 7px 4px; font-weight: 600; }"
                             "QPushButton:disabled { background: palette(mid); }")
             b.clicked.connect(lambda _=False, vv=v: self.set_verdict(vv))
             vb.addWidget(b)
@@ -677,10 +679,22 @@ class MainWindow(QMainWindow):
                     self.moved[Path(m["from"]).as_posix()] = Path(m["to"]).as_posix()
             except Exception:  # noqa: BLE001
                 pass
+        note = ""
+        if results and any(r.v < pc.RULES_VERSION for r in results):
+            info = pc.rejudge(results, pc.Thresholds())
+            b, a = info["before"], info["after"]
+            note = (f"새 기준으로 다시 판정했습니다 — 스크린샷 {a['screenshot']}장 분리, "
+                    f"연사중복 {b['burst']}장 → {a['burst']}장")
+            try:
+                pc.save_reports(folder, results, pc.Thresholds())
+            except Exception:  # noqa: BLE001
+                pass
         self.model.set_results(results)
         self.stack.setCurrentIndex(1)
         self.refresh_counts()
         self.select_row(0)
+        if note:
+            self.flash(note, 15000)
 
     # -- 분석 --------------------------------------------------------------
     def toggle_scan(self):
@@ -825,7 +839,8 @@ class MainWindow(QMainWindow):
         if total:
             moved = len(self.moved)
             self.lbl_summary.setText(
-                f"불량 {c['reject']} · 확인필요 {c['review']} · 연사중복 {c['burst']} · 정상 {c['keep']}"
+                f"불량 {c['reject']} · 확인필요 {c['review']} · 연사중복 {c['burst']} · "
+                f"스크린샷 {c['screenshot']} · 정상 {c['keep']}"
                 + (f"   |   {moved}장 정리됨" if moved else ""))
         else:
             self.lbl_summary.setText("")
@@ -894,7 +909,8 @@ class MainWindow(QMainWindow):
             meta.append("촬영 " + r.taken.rstrip("~").replace("T", " ")[:16])
         if r.n_main:
             meta.append(f"얼굴 {r.n_main}명")
-        meta.append(f"점수 {r.score:.0f}")
+        if r.verdict != "screenshot":
+            meta.append(f"점수 {r.score:.0f}")
         if self.is_moved(r):
             meta.append("이동됨 → " + esc(self.moved[r.path]))
         badge = (f"<span style='background:{COLORS[r.verdict]}; color:white; font-weight:600;'>"
@@ -1135,10 +1151,10 @@ class MainWindow(QMainWindow):
         self.refresh_counts()
         self.save_timer.start()
 
-    def flash(self, msg):
+    def flash(self, msg, ms: int = 5000):
         self.lbl_summary.setText(msg)
         self.lbl_summary.setStyleSheet("color: #2f9a57; font-weight: 600;")
-        self.flash_timer.start()
+        self.flash_timer.start(ms)
 
     def unflash(self):
         self.lbl_summary.setStyleSheet("")
@@ -1194,7 +1210,11 @@ def selftest(folder: str, out: str) -> int:
         n_before = len(w.model.all)
         deleted = w.delete_results([victim])
         delete_ok = deleted == 1 and not vpath.exists() and len(w.model.all) == n_before - 1
-        summary = {"ok": len(results) == len(files) > 0 and not errors and thumbs_ok and regen_ok and delete_ok,
+        shots = [r for r in results if pc.SHOT_NAME.search(r.path)]
+        screens_ok = all(r.verdict == "screenshot" for r in shots)
+        summary = {"ok": len(results) == len(files) > 0 and not errors and thumbs_ok and regen_ok and delete_ok
+                   and screens_ok,
+                   "screenshots": len(shots), "screens_ok": screens_ok,
                    "photos": len(results), "counts": w.model.counts(), "errors": errors,
                    "faces": sum(r.n_main for r in results), "thumbs_ok": thumbs_ok,
                    "thumb_regen_ok": regen_ok, "delete_ok": delete_ok, "trash_drive": w.can_trash(vpath)}

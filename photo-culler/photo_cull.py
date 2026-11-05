@@ -29,6 +29,7 @@ import concurrent.futures as cf
 import csv
 import html
 import json
+import re
 import shutil
 import sys
 import threading
@@ -80,9 +81,10 @@ if HEIF_OK:
     IMAGE_EXTS |= {".heic", ".heif"}
 
 OUT_DIR_NAME = "_사진정리"
-VERDICT_KO = {"reject": "불량", "review": "확인필요", "burst": "연사중복", "keep": "정상"}
+VERDICT_KO = {"reject": "불량", "review": "확인필요", "burst": "연사중복", "screenshot": "스크린샷", "keep": "정상"}
 KO_VERDICT = {v: k for k, v in VERDICT_KO.items()}
-MOVE_FOLDERS = {"reject": "1_불량", "review": "2_확인필요", "burst": "3_연사중복"}
+MOVE_FOLDERS = {"reject": "1_불량", "review": "2_확인필요", "burst": "3_연사중복", "screenshot": "4_스크린샷"}
+RULES_VERSION = 2  # 판정 규칙이 바뀌면 올림 → 이전 결과를 불러올 때 다시 판정
 
 WORK_LONG = 2000     # 분석용 해상도(긴 변). 카메라마다 다른 해상도를 같은 기준으로 맞춤
 DETECT_LONG = 1280   # 얼굴 검출용 해상도
@@ -144,6 +146,7 @@ ISSUES = {
     "face_bright": ("review", 10, "얼굴이 하얗게 날아감"),
     "too_dark": ("reject", 40, "사진이 너무 어두움"),
     "overexposed": ("review", 15, "과다 노출(하얗게 날아감)"),
+    "screenshot": ("screenshot", 0, "스크린샷"),
 }
 
 
@@ -183,6 +186,7 @@ class PhotoResult:
     thumb: str = ""
     faces: list = field(default_factory=list)  # 얼굴별 측정값 (results.json 디버깅용)
     manual: bool = False  # 사용자가 판정을 직접 바꿨는지
+    v: int = 1            # 이 결과를 만든 판정 규칙 버전 (RULES_VERSION)
 
 
 # ----------------------------------------------------------------------------
@@ -221,13 +225,19 @@ def ensure_models(log=print) -> None:
 # 이미지 로드
 # ----------------------------------------------------------------------------
 def load_image(path: Path):
+    """(BGR 분석용 이미지, 촬영시각, 시각 출처, 원본 크기, {camera, comment}) 를 돌려준다"""
+    meta = {"camera": False, "comment": ""}
     with Image.open(path) as im:
         taken = None
         try:
             exif = im.getexif()
-            raw = exif.get_ifd(0x8769).get(36867) or exif.get(306)
+            sub = exif.get_ifd(0x8769)
+            raw = sub.get(36867) or exif.get(306)
             if raw:
                 taken = datetime.strptime(str(raw).strip()[:19], "%Y:%m:%d %H:%M:%S")
+            meta["camera"] = bool(exif.get(271) or exif.get(272))  # 제조사/모델
+            c = sub.get(37510) or exif.get(270) or ""                 # UserComment / ImageDescription
+            meta["comment"] = c.decode("latin-1", "ignore") if isinstance(c, bytes) else str(c)
         except Exception:  # noqa: BLE001
             pass
         orig_size = im.size
@@ -248,7 +258,28 @@ def load_image(path: Path):
         taken_src = "file"
     else:
         taken_src = "exif"
-    return bgr, taken, taken_src, orig_size
+    return bgr, taken, taken_src, orig_size, meta
+
+
+SHOT_NAME = re.compile(r"screen[\s_-]*shot|screen[\s_-]*capture|스크린\s*샷|캡처|캡쳐", re.IGNORECASE)
+
+
+def looks_like_screenshot(rel: str, size, camera: bool | None = None, comment: str = "") -> bool:
+    """파일/폴더 이름(Screenshot, 스크린샷, 캡처), 아이폰 스크린샷 표시, 또는
+    카메라 정보 없는 세로로 긴 PNG(휴대폰 화면 비율)이면 스크린샷으로 본다."""
+    p = Path(rel)
+    if any(SHOT_NAME.search(part) for part in p.parts):
+        return True
+    if "screenshot" in (comment or "").lower():
+        return True
+    try:
+        w, h = size
+    except (TypeError, ValueError):
+        return False
+    # 세로로 긴(휴대폰 화면 비율) PNG 만. 가로로 긴 PNG 는 단체사진·파노라마일 수 있어서 제외
+    if p.suffix.lower() == ".png" and w and h and h / w >= 1.95 and camera is not True:
+        return True
+    return False
 
 
 # 눈 윤곽 6점 (MediaPipe Face Mesh 인덱스): 눈꼬리, 윗꺼풀 2, 눈꼬리, 아랫꺼풀 2
@@ -351,7 +382,7 @@ class Analyzer:
         rel = path.relative_to(root).as_posix()
         r = PhotoResult(path=rel)
         try:
-            bgr, taken, taken_src, orig = load_image(path)
+            bgr, taken, taken_src, orig, meta = load_image(path)
         except Exception as e:  # noqa: BLE001
             r.ok, r.error, r.verdict = False, f"열 수 없음: {e}", "review"
             r.issues.append(["open_error", "review", "파일을 열 수 없음"])
@@ -360,8 +391,16 @@ class Analyzer:
         r.size = orig
         h, w = bgr.shape[:2]
         r.work_size = (w, h)
+        r.v = RULES_VERSION
         gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
         r.dhash = f"{dhash(gray):016x}"
+
+        # 스크린샷은 사진 품질 검사(흐림·노출·표정)를 하지 않고 따로 분류
+        if looks_like_screenshot(rel, orig, meta["camera"], meta["comment"]):
+            mark_screenshot(r)
+            if self.thumbs_dir is not None:
+                r.thumb = self.save_thumb(bgr, [], index)
+            return r
 
         # 1) 화면 전체 선명도: 격자 타일 중 상위 10% 선명도
         lap = cv2.Laplacian(gray, cv2.CV_64F)
@@ -635,8 +674,33 @@ def find_images(root: Path, recursive: bool) -> list[Path]:
 # ----------------------------------------------------------------------------
 # 연사 묶기
 # ----------------------------------------------------------------------------
+def informative_hash(h: str) -> bool:
+    """밋밋한 이미지(흰 화면, 검은 화면 등)는 dHash 비트가 한쪽으로 쏠려서 서로 '비슷해' 보이므로 묶지 않는다"""
+    ones = bin(int(h, 16)).count("1")
+    return 8 <= ones <= 56
+
+
+def same_shape(a: PhotoResult, b: PhotoResult) -> bool:
+    """연사는 같은 카메라·같은 방향으로 찍으므로 크기가 같다"""
+    sa = tuple(a.work_size) if a.work_size and a.work_size[0] else tuple(a.size)
+    sb = tuple(b.work_size) if b.work_size and b.work_size[0] else tuple(b.size)
+    return len(sa) == 2 and len(sb) == 2 and abs(sa[0] - sb[0]) <= 1 and abs(sa[1] - sb[1]) <= 1
+
+
+def is_burst_pair(a: PhotoResult, b: PhotoResult, th: Thresholds) -> bool:
+    if not (same_shape(a, b) and informative_hash(a.dhash) and informative_hash(b.dhash)):
+        return False
+    dist = bin(int(a.dhash, 16) ^ int(b.dhash, 16)).count("1")
+    gap = abs((datetime.fromisoformat(b.taken.rstrip("~")) -
+               datetime.fromisoformat(a.taken.rstrip("~"))).total_seconds())
+    if not a.taken.endswith("~") and not b.taken.endswith("~"):  # 둘 다 촬영 시각(EXIF) 있음
+        return dist <= th.burst_hash and gap <= th.burst_gap
+    # 촬영 시각이 없으면 파일 시각만으로는 믿기 어려우므로 훨씬 엄격하게
+    return dist <= th.burst_hash // 2 and gap <= th.burst_gap * 3
+
+
 def group_bursts(results: list[PhotoResult], th: Thresholds) -> None:
-    items = [r for r in results if r.ok and r.dhash]
+    items = [r for r in results if r.ok and r.dhash and r.verdict != "screenshot"]
 
     def tkey(r):
         return r.taken.rstrip("~")
@@ -646,13 +710,10 @@ def group_bursts(results: list[PhotoResult], th: Thresholds) -> None:
     prev = None
     for r in items:
         if prev is not None:
-            dist = bin(int(r.dhash, 16) ^ int(prev.dhash, 16)).count("1")
-            both_exif = not r.taken.endswith("~") and not prev.taken.endswith("~")
-            if both_exif:
-                gap = (datetime.fromisoformat(tkey(r)) - datetime.fromisoformat(tkey(prev))).total_seconds()
-                same = dist <= th.burst_hash and gap <= th.burst_gap
-            else:
-                same = dist <= max(4, th.burst_hash - 4)
+            try:
+                same = is_burst_pair(prev, r, th)
+            except (ValueError, TypeError):
+                same = False
             if same:
                 groups[-1].append(r)
                 prev = r
@@ -668,9 +729,42 @@ def group_bursts(results: list[PhotoResult], th: Thresholds) -> None:
         for r in g:
             r.burst_group = gid
             r.burst_best = best.path
-            # 베스트가 아닌 컷은 '연사중복'으로 (명백한 불량은 불량 유지)
-            if r is not best and r.verdict != "reject":
+            # 베스트가 아닌 컷은 '연사중복'으로 (명백한 불량, 직접 정한 판정은 유지)
+            if r is not best and r.verdict != "reject" and not r.manual:
                 r.verdict = "burst"
+
+
+def mark_screenshot(r: PhotoResult) -> None:
+    r.verdict = "screenshot"
+    r.issues = [["screenshot", "screenshot", ISSUES["screenshot"][2]]]
+    r.faces = []
+    r.burst_group, r.burst_best = 0, ""
+
+
+def base_verdict(r: PhotoResult) -> str:
+    sevs = {s for _, s, _ in r.issues}
+    return "reject" if "reject" in sevs else "review" if "review" in sevs else "keep"
+
+
+def rejudge(results: list[PhotoResult], th: Thresholds) -> dict:
+    """이전 규칙으로 만든 결과를 다시 분석하지 않고 새 규칙으로 다시 판정한다.
+    (스크린샷 분리, 연사 묶기 기준). 직접 바꾼 판정은 그대로 둔다."""
+    before = {v: 0 for v in VERDICT_KO}
+    for r in results:
+        before[r.verdict] = before.get(r.verdict, 0) + 1
+    for r in results:
+        r.burst_group, r.burst_best = 0, ""
+        if not r.manual:
+            if r.ok and looks_like_screenshot(r.path, r.size):
+                mark_screenshot(r)
+            elif r.verdict in ("burst", "screenshot"):
+                r.verdict = base_verdict(r)
+        r.v = RULES_VERSION
+    group_bursts(results, th)
+    after = {v: 0 for v in VERDICT_KO}
+    for r in results:
+        after[r.verdict] = after.get(r.verdict, 0) + 1
+    return {"before": before, "after": after}
 
 
 # ----------------------------------------------------------------------------
@@ -694,7 +788,7 @@ def write_csv(out: Path, results: list[PhotoResult]) -> Path:
 
 
 def write_html(out: Path, root: Path, results: list[PhotoResult], th: Thresholds) -> Path:
-    order = {"reject": 0, "review": 1, "burst": 2, "keep": 3}
+    order = {"reject": 0, "review": 1, "burst": 2, "screenshot": 3, "keep": 4}
     rs = sorted(results, key=lambda r: (order[r.verdict], r.burst_group or 0, -r.score, r.path))
     counts = {k: sum(1 for r in results if r.verdict == k) for k in order}
     cards = []
@@ -727,7 +821,7 @@ def write_html(out: Path, root: Path, results: list[PhotoResult], th: Thresholds
 <title>사진 정리 리포트</title>
 <style>
 :root {{ --bg:#f6f6f4; --card:#fff; --fg:#1d1d1f; --mute:#6b6b70; --line:#e3e3e0;
-  --reject:#d93a3a; --review:#d98a00; --burst:#3d6fd9; --keep:#2f9a57; }}
+  --reject:#d93a3a; --review:#d98a00; --burst:#3d6fd9; --screenshot:#159a9c; --keep:#2f9a57; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg:#141416; --card:#1f1f22; --fg:#ececee;
   --mute:#9a9aa2; --line:#2e2e33; }} }}
 * {{ box-sizing:border-box }}
@@ -743,6 +837,7 @@ h1 {{ font-size:18px; margin:0 0 4px }}
 .chip.on {{ outline:2px solid var(--fg) }}
 .chip.reject b {{ color:var(--reject) }} .chip.review b {{ color:var(--review) }}
 .chip.burst b {{ color:var(--burst) }} .chip.keep b {{ color:var(--keep) }}
+.chip.screenshot b {{ color:var(--screenshot) }}
 main {{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; padding:16px }}
 .card {{ margin:0; background:var(--card); border:1px solid var(--line); border-radius:10px; overflow:hidden }}
 .card img, .noimg {{ display:block; width:100%; aspect-ratio:4/3; object-fit:contain; background:#000 }}
@@ -752,6 +847,7 @@ figcaption {{ padding:8px 10px 10px }}
 .badge {{ font-size:12px; font-weight:600; padding:2px 8px; border-radius:6px; color:#fff }}
 .badge.reject {{ background:var(--reject) }} .badge.review {{ background:var(--review) }}
 .badge.burst {{ background:var(--burst) }} .badge.keep {{ background:var(--keep) }}
+.badge.screenshot {{ background:var(--screenshot) }} li.screenshot {{ color:var(--screenshot) }}
 .score {{ color:var(--mute); font-size:12px }}
 .name {{ margin-top:6px; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }}
 ul {{ margin:6px 0 0; padding-left:18px; font-size:12px }}
@@ -927,12 +1023,14 @@ def undo_moves(root: Path) -> tuple[int, int]:
 # ----------------------------------------------------------------------------
 # scan
 # ----------------------------------------------------------------------------
-def cli_apply(root: Path, include_review: bool) -> None:
+def cli_apply(root: Path, include_review: bool, screenshots: bool = False) -> None:
     try:
         verdicts = read_report_verdicts(root)
     except FileNotFoundError as e:
         sys.exit(str(e))
     cats = ("reject", "review", "burst") if include_review else ("reject", "burst")
+    if screenshots:
+        cats += ("screenshot",)
     res = apply_moves(root, verdicts, cats)
     print("이동 완료: " + ", ".join(f"{MOVE_FOLDERS[k]} {v}장" for k, v in res["moved"].items()))
     print(f"위치: {root / OUT_DIR_NAME}")
@@ -991,7 +1089,7 @@ def scan(root: Path, recursive: bool, workers: int, sensitivity: str, move: bool
 
     c = {k: sum(1 for r in results if r.verdict == k) for k in VERDICT_KO}
     print(f"\n완료 ({time.time() - t0:.0f}초): 불량 {c['reject']} · 확인필요 {c['review']} · "
-          f"연사중복 {c['burst']} · 정상 {c['keep']}")
+          f"연사중복 {c['burst']} · 스크린샷 {c['screenshot']} · 정상 {c['keep']}")
     print(f"리포트: {page}")
     if move:
         cli_apply(root, include_review=True)
@@ -1013,6 +1111,7 @@ def main(argv=None):
     a = sub.add_parser("apply", help="report.csv 판정대로 사진 이동")
     a.add_argument("folder")
     a.add_argument("--skip-review", action="store_true", help="'확인필요'는 옮기지 않음")
+    a.add_argument("--screenshots", action="store_true", help="스크린샷도 4_스크린샷 폴더로 옮김")
     u = sub.add_parser("undo", help="이동한 사진을 원래 자리로")
     u.add_argument("folder")
     args = ap.parse_args(argv)
@@ -1023,7 +1122,7 @@ def main(argv=None):
     if args.cmd == "scan":
         scan(root, args.recursive, args.workers, args.sensitivity, args.move)
     elif args.cmd == "apply":
-        cli_apply(root, include_review=not args.skip_review)
+        cli_apply(root, include_review=not args.skip_review, screenshots=args.screenshots)
     else:
         cli_undo(root)
 

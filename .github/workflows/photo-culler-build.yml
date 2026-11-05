@@ -61,6 +61,7 @@ jobs:
               urllib.request.urlretrieve(base + n, d / n)
           Image.open(d / "portrait.jpg").filter(ImageFilter.GaussianBlur(4)).save(d / "portrait_blur.jpg")
           Image.open(d / "business-person.png").convert("RGB").save(d / "business-person.heic")
+          Image.new("RGB", (1080, 2340), "white").save(d / "Screenshot_20240101-101010_Instagram.jpg")
           print(sorted(p.name for p in d.iterdir()))
           EOF
 
@@ -137,4 +138,5 @@ jobs:
             1. **폴더 선택** (또는 창에 폴더를 끌어다 놓기) → 자동으로 분석 시작
             2. 불량 / 확인필요 / 연사중복 탭에서 사진을 확인하고, 판정이 틀리면 버튼이나 **숫자키 1~4** 로 바꾸기
             3. 필요 없는 사진은 **Del 키**로 바로 삭제 (휴지통으로 가서 복원 가능. 여러 장 선택하면 한 번 확인)
+               스크린샷은 **스크린샷 탭**에 따로 모아 보여 줘요
             4. **정리하기** → 사진 폴더 안 `_사진정리` 폴더로 분류해서 옮김 (**되돌리기** 가능)
