@@ -55,7 +55,7 @@ jobs:
           import pillow_heif
           from PIL import Image, ImageFilter
           pillow_heif.register_heif_opener()
-          d = Path("testdata"); d.mkdir(exist_ok=True)
+          d = Path("testdata/가족사진"); d.mkdir(parents=True, exist_ok=True)  # 한글 경로도 시험
           base = "https://storage.googleapis.com/mediapipe-assets/"
           for n in ("portrait.jpg", "business-person.png", "man-woman-okay.jpg"):
               urllib.request.urlretrieve(base + n, d / n)
@@ -69,7 +69,10 @@ jobs:
         shell: pwsh
         timeout-minutes: 10
         run: |
-          $p = Start-Process -FilePath "dist\PhotoCuller\PhotoCuller.exe" -ArgumentList '--selftest', "$PWD\testdata", "$PWD\selftest.json" -Wait -PassThru
+          # 한글 폴더에 풀어서 실행해 봄 (모델·썸네일이 한글 경로에서도 되는지)
+          $app = Join-Path $env:RUNNER_TEMP "사진정리앱"
+          Copy-Item -Recurse dist\PhotoCuller $app
+          $p = Start-Process -FilePath "$app\PhotoCuller.exe" -ArgumentList '--selftest', "$PWD\testdata\가족사진", "$PWD\selftest.json" -Wait -PassThru
           Get-Content selftest.json
           if ($p.ExitCode -ne 0) { throw "self-test failed (exit $($p.ExitCode))" }
 
@@ -78,7 +81,9 @@ jobs:
         timeout-minutes: 10
         run: |
           set +e
-          ./dist/PhotoCuller.app/Contents/MacOS/PhotoCuller --selftest "$PWD/testdata" "$PWD/selftest.json"
+          app="$RUNNER_TEMP/사진정리앱"
+          mkdir -p "$app" && cp -R dist/PhotoCuller.app "$app/"
+          "$app/PhotoCuller.app/Contents/MacOS/PhotoCuller" --selftest "$PWD/testdata/가족사진" "$PWD/selftest.json"
           code=$?
           cat selftest.json
           exit $code
@@ -114,7 +119,7 @@ jobs:
           files: dist/*.zip
           body: |
             흐리거나, 눈을 감았거나, 표정이 어색한 사진을 골라 주는 프로그램이에요.
-            분석은 내 컴퓨터에서만 이루어지고, 사진은 지워지지 않아요(폴더로 옮기기만 하고 되돌리기 가능).
+            분석은 내 컴퓨터에서만 이루어지고, 직접 지우기 전에는 사진을 옮기기만 해요(되돌리기 가능).
 
             ## 다운로드
             아래 **Assets** 에서 내 컴퓨터에 맞는 파일을 받으세요.
@@ -131,4 +136,5 @@ jobs:
             ## 사용법
             1. **폴더 선택** (또는 창에 폴더를 끌어다 놓기) → 자동으로 분석 시작
             2. 불량 / 확인필요 / 연사중복 탭에서 사진을 확인하고, 판정이 틀리면 버튼이나 **숫자키 1~4** 로 바꾸기
-            3. **정리하기** → 사진 폴더 안 `_사진정리` 폴더로 분류해서 옮김 (**되돌리기** 가능)
+            3. 필요 없는 사진은 **Del 키**로 바로 삭제 (휴지통으로 가서 복원 가능. 여러 장 선택하면 한 번 확인)
+            4. **정리하기** → 사진 폴더 안 `_사진정리` 폴더로 분류해서 옮김 (**되돌리기** 가능)

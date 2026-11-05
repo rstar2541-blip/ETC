@@ -19,16 +19,18 @@ import json
 import shutil
 import time
 import traceback
+from datetime import datetime
 from pathlib import Path
 
 from PIL import Image, ImageOps
-from PySide6.QtCore import (QAbstractListModel, QItemSelectionModel, QModelIndex, QRect, QSettings, QSize, Qt,
-                            QThread, QTimer, QUrl, Signal)
+from PySide6.QtCore import (QAbstractListModel, QFile, QItemSelectionModel, QModelIndex, QObject, QRect, QSettings,
+                            QSize, Qt, QThread, QThreadPool, QTimer, QUrl, Signal)
 from PySide6.QtGui import (QColor, QDesktopServices, QFont, QFontMetrics, QIcon, QImage, QKeySequence, QPainter,
                            QPainterPath, QPen, QPixmap, QPixmapCache, QShortcut)
 from PySide6.QtWidgets import (QAbstractItemView, QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog,
                                QDialogButtonBox, QFileDialog, QFrame, QHBoxLayout, QLabel, QListView, QMainWindow,
-                               QMessageBox, QProgressBar, QPushButton, QSizePolicy, QSplitter, QStackedWidget,
+                               QMessageBox, QProgressBar, QProgressDialog, QPushButton, QSizePolicy, QSplitter,
+                               QStackedWidget,
                                QStyle, QStyledItemDelegate, QVBoxLayout, QWidget)
 
 import photo_cull as pc
@@ -119,6 +121,37 @@ class ScanWorker(QThread):
             self.failed.emit(f"{e}\n\n{traceback.format_exc(limit=4)}")
 
 
+class ThumbMaker(QObject):
+    """썸네일 파일이 없으면(이전 버전 결과 등) 원본에서 백그라운드로 다시 만든다.
+    가장 최근에 요청한 것(= 지금 화면에 보이는 것)부터 만든다."""
+    ready = Signal(str, bool)
+
+    def __init__(self):
+        super().__init__()
+        self.pool = QThreadPool()
+        self.pool.setMaxThreadCount(max(2, min(4, (os.cpu_count() or 2) - 1)))
+        self.pending: set[str] = set()
+        self.failed: set[str] = set()
+        self.seq = 0
+
+    def request(self, src: Path, dest: Path, faces, work_size):
+        key = str(dest)
+        if key in self.pending or key in self.failed:
+            return
+        self.pending.add(key)
+        self.seq += 1
+
+        def job():
+            self.ready.emit(key, pc.make_thumb(src, dest, faces, work_size))
+
+        self.pool.start(job, min(self.seq, 2_000_000_000))
+
+    def clear(self):
+        self.pool.clear()
+        self.pending.clear()
+        self.failed.clear()
+
+
 # ----------------------------------------------------------------------------
 # 목록 모델 + 카드 그리기
 # ----------------------------------------------------------------------------
@@ -180,6 +213,15 @@ class ResultModel(QAbstractListModel):
         self.rows = [i for i in self.rows if self.matches(self.all[i])]
         self.endResetModel()
 
+    def remove(self, gone: set):
+        """gone = 지울 결과 객체들의 id() 집합. 화면에 보이던 순서는 유지"""
+        self.beginResetModel()
+        shown = [self.all[i] for i in self.rows if id(self.all[i]) not in gone]
+        self.all = [r for r in self.all if id(r) not in gone]
+        pos = {id(r): k for k, r in enumerate(self.all)}
+        self.rows = [pos[id(r)] for r in shown]
+        self.endResetModel()
+
     def counts(self):
         c = {v: 0 for v in VERDICTS}
         for r in self.all:
@@ -216,6 +258,9 @@ class CardDelegate(QStyledItemDelegate):
         th = QRect(rect.x() + 6, rect.y() + 6, rect.width() - 12, self.TH)
         p.fillRect(th, QColor("#151515"))
         pm = self.win.thumb_pixmap(r)
+        if pm is None and r.thumb:
+            p.setPen(QColor("#777777"))
+            p.drawText(th, Qt.AlignmentFlag.AlignCenter, "미리보기 만드는 중…")
         if pm is not None and not pm.isNull():
             sc = pm.scaled(th.size() * p.device().devicePixelRatioF(), Qt.AspectRatioMode.KeepAspectRatio,
                            Qt.TransformationMode.SmoothTransformation)
@@ -360,6 +405,11 @@ class MainWindow(QMainWindow):
         self.t0 = 0.0
         self.current: pc.PhotoResult | None = None
         self.preview_cache: dict[str, QImage] = {}
+        self.permanent_ok: set[str] = set()  # 휴지통 없는 드라이브에서 영구 삭제를 허락한 폴더
+        self.quiet = False  # 자가 점검 때는 확인 창을 띄우지 않음
+        self.thumbs = ThumbMaker()
+        self.thumbs.ready.connect(self.on_thumb_ready)
+        self.flash_timer = QTimer(self, singleShot=True, interval=5000, timeout=self.unflash)
         self.save_timer = QTimer(self, singleShot=True, interval=1500, timeout=self.save_now)
         QPixmapCache.setCacheLimit(256 * 1024)
         self.setAcceptDrops(True)
@@ -435,7 +485,7 @@ class MainWindow(QMainWindow):
             b.clicked.connect(lambda _=False, k=key: self.set_filter(k))
         self.filter_btns["all"].setChecked(True)
         tabs.addStretch(1)
-        hint = QLabel("단축키  1 불량 · 2 확인필요 · 3 연사중복 · 4 남기기 · Enter 원본 열기")
+        hint = QLabel("단축키  1 불량 · 2 확인필요 · 3 연사중복 · 4 남기기 · Del 삭제(휴지통) · Enter 원본 열기")
         hint.setStyleSheet("color: gray")
         tabs.addWidget(hint)
         outer.addLayout(tabs)
@@ -452,7 +502,7 @@ class MainWindow(QMainWindow):
         f.setBold(True)
         t1.setFont(f)
         t2 = QLabel("사진 폴더를 선택하거나 이 창에 끌어다 놓으세요.\n"
-                    "분석은 이 컴퓨터에서만 이루어지고, 사진은 지워지지 않습니다.")
+                    "분석은 이 컴퓨터에서만 이루어지고, 사진은 직접 지우기 전에는 그대로 있습니다.")
         t2.setAlignment(Qt.AlignmentFlag.AlignCenter)
         t2.setStyleSheet("color: gray")
         big = QPushButton("📁  사진 폴더 선택")
@@ -509,9 +559,15 @@ class MainWindow(QMainWindow):
             vb.addWidget(b)
             self.verdict_btns[v] = b
         dl.addLayout(vb)
+        row2 = QHBoxLayout()
         self.btn_open = QPushButton("원본 열기  ↵")
         self.btn_open.clicked.connect(self.open_original)
-        dl.addWidget(self.btn_open)
+        self.btn_delete = QPushButton("🗑  삭제  Del")
+        self.btn_delete.setToolTip("선택한 사진을 휴지통으로 보냅니다 (휴지통에서 복원 가능)")
+        self.btn_delete.clicked.connect(self.delete_selected)
+        row2.addWidget(self.btn_open, 2)
+        row2.addWidget(self.btn_delete, 1)
+        dl.addLayout(row2)
 
         split = QSplitter()
         split.addWidget(self.view)
@@ -546,6 +602,9 @@ class MainWindow(QMainWindow):
             QShortcut(QKeySequence(key), self, activated=lambda vv=v: self.set_verdict(vv))
         QShortcut(QKeySequence(Qt.Key.Key_Return), self.view, activated=self.open_original)
         QShortcut(QKeySequence(Qt.Key.Key_Enter), self.view, activated=self.open_original)
+        QShortcut(QKeySequence(QKeySequence.StandardKey.Delete), self, activated=self.delete_selected)
+        if sys.platform == "darwin":  # 맥 키보드의 delete 키
+            QShortcut(QKeySequence(Qt.Key.Key_Backspace), self, activated=self.delete_selected)
         self.refresh_counts()
         self.update_detail_buttons()
 
@@ -586,6 +645,7 @@ class MainWindow(QMainWindow):
         self.lbl_detail.setText("")
         QPixmapCache.clear()
         self.preview_cache.clear()
+        self.thumbs.clear()
         prev = pc.load_results(folder)
         if prev:
             load = True
@@ -650,6 +710,7 @@ class MainWindow(QMainWindow):
         self.settings.setValue("sensitivity", self.cmb_sens.currentIndex())
         QPixmapCache.clear()
         self.preview_cache.clear()
+        self.thumbs.clear()
         self.model.set_results([], sort=False)
         self.set_filter("all")
         self.stack.setCurrentIndex(1)
@@ -722,13 +783,23 @@ class MainWindow(QMainWindow):
     def thumb_pixmap(self, r: pc.PhotoResult) -> QPixmap | None:
         if not r.thumb or self.root is None:
             return None
-        path = str(self.root / pc.OUT_DIR_NAME / "thumbs" / r.thumb)
-        pm = QPixmapCache.find(path)
+        dest = self.root / pc.OUT_DIR_NAME / "thumbs" / r.thumb
+        key = str(dest)
+        pm = QPixmapCache.find(key)
         if pm is None or pm.isNull():
-            pm = QPixmap(path)
-            if not pm.isNull():
-                QPixmapCache.insert(path, pm)
+            pm = QPixmap(key)
+            if pm.isNull():
+                self.thumbs.request(self.photo_path(r), dest, r.faces, r.work_size)
+                return None
+            QPixmapCache.insert(key, pm)
         return pm
+
+    def on_thumb_ready(self, key, ok):
+        self.thumbs.pending.discard(key)
+        if not ok:
+            self.thumbs.failed.add(key)
+        QPixmapCache.remove(key)
+        self.view.viewport().update()
 
     def is_moved(self, r: pc.PhotoResult) -> bool:
         return r.path in self.moved
@@ -795,6 +866,7 @@ class MainWindow(QMainWindow):
         for b in self.verdict_btns.values():
             b.setEnabled(on)
         self.btn_open.setEnabled(self.current is not None)
+        self.btn_delete.setEnabled(on and self.worker is None)
 
     def show_current(self):
         idx = self.view.currentIndex()
@@ -941,10 +1013,143 @@ class MainWindow(QMainWindow):
         QMessageBox.information(self, APP_TITLE, f"{n}장을 되돌렸습니다."
                                 + (f"\n{left}장은 되돌리지 못했습니다(같은 이름의 파일이 이미 있음)." if left else ""))
 
+    # -- 삭제 (Del) -------------------------------------------------------
+    def can_trash(self, path: Path) -> bool:
+        """이 드라이브에 휴지통이 있는지. Windows 에서 USB 메모리·SD 카드·네트워크 드라이브는
+        휴지통이 없어서 지우면 바로 영구 삭제된다."""
+        if sys.platform != "win32":
+            return True
+        try:
+            import ctypes
+            drive = os.path.splitdrive(str(path))[0]
+            if not drive:
+                return True
+            return ctypes.windll.kernel32.GetDriveTypeW(drive.rstrip("\\") + "\\") == 3  # DRIVE_FIXED
+        except Exception:  # noqa: BLE001
+            return True
+
+    def delete_selected(self):
+        if self.worker is not None or self.root is None:
+            return
+        rs = self.selected_results()
+        if not rs:
+            return
+        trash = self.can_trash(self.photo_path(rs[0]))
+        if not trash and str(self.root) not in self.permanent_ok:
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Warning)
+            box.setWindowTitle(APP_TITLE)
+            box.setText("이 드라이브는 휴지통을 쓸 수 없습니다 (USB 메모리·SD 카드·네트워크 드라이브).\n"
+                        "삭제하면 바로 <b>영구 삭제</b>되어 되돌릴 수 없습니다.".replace("\n", "<br>"))
+            box.setInformativeText(f"{len(rs)}장을 영구 삭제할까요?")
+            again = QCheckBox("이 폴더에서는 다시 묻지 않기")
+            box.setCheckBox(again)
+            yes = box.addButton("영구 삭제", QMessageBox.ButtonRole.DestructiveRole)
+            box.addButton("취소", QMessageBox.ButtonRole.RejectRole)
+            box.exec()
+            if box.clickedButton() is not yes:
+                return
+            if again.isChecked():
+                self.permanent_ok.add(str(self.root))
+        elif len(rs) > 1:
+            ans = QMessageBox.question(self, APP_TITLE, f"선택한 사진 {len(rs)}장을 휴지통으로 보낼까요?")
+            if ans != QMessageBox.StandardButton.Yes:
+                return
+        self.delete_results(rs)
+
+    def delete_results(self, rs) -> int:
+        """사진 파일을 휴지통으로 보내고 목록에서 뺀다. 지운 장수를 돌려준다."""
+        row = self.view.currentIndex().row()
+        permanent = not self.can_trash(self.photo_path(rs[0]))
+        done, failed, entries = [], [], []
+        prog = None
+        if len(rs) > 10:
+            prog = QProgressDialog("사진을 지우는 중…", "중지", 0, len(rs), self)
+            prog.setWindowModality(Qt.WindowModality.WindowModal)
+            prog.setMinimumDuration(300)
+        for k, r in enumerate(rs):
+            if prog is not None:
+                prog.setValue(k)
+                if prog.wasCanceled():
+                    break
+            path = self.photo_path(r)
+            ok = True
+            if path.exists():
+                res = QFile.moveToTrash(str(path))
+                ok = bool(res[0] if isinstance(res, tuple) else res)
+                if not ok and permanent:  # 휴지통이 없는 드라이브 (사용자가 영구 삭제를 허락함)
+                    try:
+                        path.unlink()
+                        ok = True
+                    except OSError:
+                        ok = False
+            if ok:
+                done.append(r)
+                entries.append({"path": r.path, "file": str(path), "verdict": r.verdict,
+                                "deleted_at": datetime.now().isoformat(timespec="seconds"),
+                                "to_trash": not permanent})
+            else:
+                failed.append(r)
+        if prog is not None:
+            prog.setValue(len(rs))
+        if done:
+            self.remove_results(done)
+            try:
+                pc.log_deleted(self.root, entries)
+            except Exception:  # noqa: BLE001
+                pass
+            self.select_row(row)
+            where = "영구 삭제했습니다" if permanent else "휴지통으로 보냈습니다 (휴지통에서 복원할 수 있어요)"
+            self.flash(f"🗑  {len(done)}장을 {where}")
+        if failed and not self.quiet:
+            QMessageBox.warning(self, APP_TITLE, f"{len(failed)}장은 지우지 못했습니다.\n"
+                                "다른 프로그램에서 열려 있지 않은지 확인해 주세요.\n\n"
+                                + "\n".join(r.path for r in failed[:10]))
+        return len(done)
+
+    def remove_results(self, done):
+        paths = {r.path for r in done}
+        best_gone = {r.burst_group for r in done if r.burst_group and r.burst_best == r.path}
+        self.model.remove({id(r) for r in done})
+        # 연사 묶음의 베스트를 지웠으면 남은 것 중 가장 좋은 컷을 새 베스트로
+        for g in best_gone:
+            members = [x for x in self.model.all if x.burst_group == g]
+            if not members:
+                continue
+            best = max(members, key=lambda x: x.score)
+            for m in members:
+                m.burst_best = best.path
+            if best.verdict == "burst" and not best.manual:
+                best.verdict = "keep"
+        moved = [p for p in paths if p in self.moved]
+        for p in moved:
+            self.moved.pop(p)
+        if moved:
+            try:
+                pc.forget_moves(self.root, moved)
+            except Exception:  # noqa: BLE001
+                pass
+        if self.current is not None and self.current.path in paths:
+            self.current = None
+        self.preview_cache.clear()
+        self.refresh_counts()
+        self.save_timer.start()
+
+    def flash(self, msg):
+        self.lbl_summary.setText(msg)
+        self.lbl_summary.setStyleSheet("color: #2f9a57; font-weight: 600;")
+        self.flash_timer.start()
+
+    def unflash(self):
+        self.lbl_summary.setStyleSheet("")
+        self.refresh_counts()
+
     def closeEvent(self, e):  # noqa: N802
         if self.worker is not None:
             self.worker.stop()
             self.worker.wait(15000)
+        self.thumbs.clear()
+        self.thumbs.pool.waitForDone(5000)
         self.save_now()
         self.settings.setValue("geometry", self.saveGeometry())
         super().closeEvent(e)
@@ -956,6 +1161,7 @@ class MainWindow(QMainWindow):
 def selftest(folder: str, out: str) -> int:
     app = QApplication.instance() or QApplication(sys.argv[:1])
     w = MainWindow()
+    w.quiet = True
     w.show()
     app.processEvents()
     root = Path(folder).resolve()
@@ -973,9 +1179,25 @@ def selftest(folder: str, out: str) -> int:
         w.load_existing(root, results)
         app.processEvents()
         errors = [r.error for r in results if not r.ok]
-        summary = {"ok": len(results) == len(files) > 0 and not errors, "photos": len(results),
-                   "counts": w.model.counts(), "errors": errors,
-                   "faces": sum(r.n_main for r in results)}
+        thumbs_ok = all((thumbs / r.thumb).exists() for r in results if r.ok)
+        # 썸네일이 없을 때 다시 만들어지는지
+        r0 = results[0]
+        (thumbs / r0.thumb).unlink()
+        QPixmapCache.clear()
+        w.thumb_pixmap(r0)
+        w.thumbs.pool.waitForDone(20000)
+        app.processEvents()
+        regen_ok = (thumbs / r0.thumb).exists() and w.thumb_pixmap(r0) is not None
+        # 삭제(휴지통)가 되는지
+        victim = results[-1]
+        vpath = w.photo_path(victim)
+        n_before = len(w.model.all)
+        deleted = w.delete_results([victim])
+        delete_ok = deleted == 1 and not vpath.exists() and len(w.model.all) == n_before - 1
+        summary = {"ok": len(results) == len(files) > 0 and not errors and thumbs_ok and regen_ok and delete_ok,
+                   "photos": len(results), "counts": w.model.counts(), "errors": errors,
+                   "faces": sum(r.n_main for r in results), "thumbs_ok": thumbs_ok,
+                   "thumb_regen_ok": regen_ok, "delete_ok": delete_ok, "trash_drive": w.can_trash(vpath)}
     except Exception as e:  # noqa: BLE001
         summary = {"ok": False, "error": f"{e}\n{traceback.format_exc()}"}
     Path(out).write_text(json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")

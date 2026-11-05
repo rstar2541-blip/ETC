@@ -287,9 +287,15 @@ class Analyzer:
         self.mp = mp
         self.th = th
         self.thumbs_dir = thumbs_dir
-        self.det = cv2.FaceDetectorYN.create(str(MODEL_DIR / YUNET_FILE), "", (320, 320), 0.7, 0.3, 5000)
+        # 모델은 파일 경로 대신 메모리로 넘김: Windows 의 OpenCV 는 한글 등 비ASCII 경로를 못 연다
+        yunet = (MODEL_DIR / YUNET_FILE).read_bytes()
+        try:
+            self.det = cv2.FaceDetectorYN.create("onnx", np.frombuffer(yunet, np.uint8), np.array([], np.uint8),
+                                                 (320, 320), 0.7, 0.3, 5000)
+        except (TypeError, cv2.error):  # 버퍼를 못 받는 구버전 OpenCV
+            self.det = cv2.FaceDetectorYN.create(str(MODEL_DIR / YUNET_FILE), "", (320, 320), 0.7, 0.3, 5000)
         opts = vision.FaceLandmarkerOptions(
-            base_options=BaseOptions(model_asset_path=str(MODEL_DIR / LANDMARKER_FILE)),
+            base_options=BaseOptions(model_asset_buffer=(MODEL_DIR / LANDMARKER_FILE).read_bytes()),
             output_face_blendshapes=True,
             num_faces=1,
             min_face_detection_confidence=0.3,
@@ -545,7 +551,10 @@ class Analyzer:
             color = (60, 60, 230) if bad else (0, 165, 255) if f.issues else (235, 235, 235)
             cv2.rectangle(th, (int(x), int(y)), (int(x + fw), int(y + fh)), color, 2)
         name = f"{index:06d}.jpg"
-        cv2.imwrite(str(self.thumbs_dir / name), th, [cv2.IMWRITE_JPEG_QUALITY, 82])
+        # cv2.imwrite 는 Windows 에서 한글 경로에 조용히 실패하므로 인코딩만 하고 저장은 파이썬으로
+        ok, buf = cv2.imencode(".jpg", th, [cv2.IMWRITE_JPEG_QUALITY, 82])
+        if ok:
+            (self.thumbs_dir / name).write_bytes(buf.tobytes())
         return name
 
 
@@ -784,6 +793,59 @@ def load_results(root: Path) -> list[PhotoResult] | None:
                 for d in json.loads(p.read_text(encoding="utf-8"))]
     except Exception:  # noqa: BLE001
         return None
+
+
+def face_color(issues, rgb=True):
+    bad = any(ISSUES.get(c, ("",))[0] == "reject" for c in issues)
+    c = (230, 60, 60) if bad else (255, 165, 0) if issues else (235, 235, 235)
+    return c if rgb else c[::-1]
+
+
+def make_thumb(src: Path, dest: Path, faces: list, work_size, size: int = 480) -> bool:
+    """분석 결과(얼굴 박스)를 그린 썸네일을 원본에서 다시 만든다. (썸네일이 없는 이전 결과용)"""
+    from PIL import ImageDraw
+    try:
+        with Image.open(src) as im:
+            if im.format == "JPEG":
+                s = size / max(im.size)
+                if s < 1:
+                    im.draft("RGB", (int(im.size[0] * s * 2), int(im.size[1] * s * 2)))
+            im = ImageOps.exif_transpose(im).convert("RGB")
+            im.thumbnail((size, size))
+            if faces and work_size and work_size[0]:
+                k = im.width / work_size[0]
+                d = ImageDraw.Draw(im)
+                for f in faces:
+                    x, y, w, h = (v * k for v in f["box"])
+                    d.rectangle([x, y, x + w, y + h], outline=face_color(f.get("issues", [])), width=2)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            im.save(dest, "JPEG", quality=82)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def log_deleted(root: Path, entries: list[dict]) -> None:
+    """지운 사진 기록 (_사진정리/deleted.json)"""
+    p = root / OUT_DIR_NAME / "deleted.json"
+    try:
+        log = json.loads(p.read_text(encoding="utf-8")) if p.exists() else []
+    except Exception:  # noqa: BLE001
+        log = []
+    log.extend(entries)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def forget_moves(root: Path, from_paths) -> None:
+    """지운 사진은 이동 기록에서 빼서, 되돌리기 할 때 '되돌리지 못함'으로 남지 않게"""
+    p = root / OUT_DIR_NAME / "moves.json"
+    if not p.exists():
+        return
+    drop = {Path(x).as_posix() for x in from_paths}
+    log = json.loads(p.read_text(encoding="utf-8"))
+    log = [m for m in log if Path(m["from"]).as_posix() not in drop]
+    p.write_text(json.dumps(log, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 # ----------------------------------------------------------------------------
