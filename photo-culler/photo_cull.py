@@ -53,6 +53,13 @@ except ImportError:
 
 Image.MAX_IMAGE_PIXELS = 300_000_000
 
+# 콘솔 인코딩이 한글을 못 쓰는 환경(영문 Windows, 출력 리다이렉트 등)에서도 죽지 않게
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(errors="replace")
+    except Exception:  # noqa: BLE001
+        pass
+
 HERE = Path(__file__).resolve().parent
 # PyInstaller로 묶은 프로그램이면 함께 들어 있는 models 폴더를 사용
 MODEL_DIR = Path(getattr(sys, "_MEIPASS", HERE)) / "models"

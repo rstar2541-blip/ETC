@@ -21,6 +21,9 @@ jobs:
           - os: macos-latest
             artifact: PhotoCuller-macOS
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
     defaults:
       run:
         shell: bash
