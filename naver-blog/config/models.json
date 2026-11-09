@@ -1,0 +1,66 @@
+{
+  "anchor": {"name": "BMW", "keywords": ["BMW", "비엠더블유"]},
+  "owned": [
+    {"id": "e82-135i",      "label": "E82 135i",              "keywords": ["135i", "BMW 135i"]},
+    {"id": "e93-335i",      "label": "E93 335i 컨버터블",       "keywords": ["335i", "335i 컨버터블", "E93"]},
+    {"id": "f87-m2c",       "label": "F87 M2 컴페티션",         "keywords": ["M2 컴페티션", "M2 컴페", "F87 M2"]},
+    {"id": "f80-m3",        "label": "F80 M3",                "keywords": ["F80 M3", "BMW M3"]},
+    {"id": "f82-m4",        "label": "F82 M4",                "keywords": ["F82 M4", "BMW M4"]},
+    {"id": "f83-m4-cabrio", "label": "F83 M4 컨버터블",         "keywords": ["M4 컨버터블", "F83 M4"]},
+    {"id": "g80-m3",        "label": "G80 M3",                "keywords": ["G80 M3", "M3 컴페티션"]}
+  ],
+  "interested": [
+    {"id": "g12-740li",      "label": "G12 740Li",            "keywords": ["740Li", "BMW 740Li"]},
+    {"id": "f20-m140i",      "label": "F20 M140i",            "keywords": ["M140i", "BMW M140i"]},
+    {"id": "g42-m240i",      "label": "G42 M240i",            "keywords": ["M240i", "BMW M240i"]},
+    {"id": "f22-m235i",      "label": "F22 M235i",            "keywords": ["M235i", "BMW M235i"]},
+    {"id": "g21-m340i-t",    "label": "G21 M340i 투어링",       "keywords": ["M340i 투어링", "M340i"]},
+    {"id": "g87-m2",         "label": "G87 M2",               "keywords": ["G87 M2", "신형 M2"]},
+    {"id": "g32-640i-gt",    "label": "G32 640i GT",          "keywords": ["640i GT", "6시리즈 GT"]},
+    {"id": "g81-m3-t",       "label": "G81 M3 투어링",          "keywords": ["M3 투어링", "G81"]},
+    {"id": "f90-m5c",        "label": "F90 M5 컴페티션",         "keywords": ["M5 컴페티션", "F90 M5"]},
+    {"id": "f92-m8",         "label": "F92 M8",               "keywords": ["BMW M8", "M8 컴페티션"]},
+    {"id": "g15-840i",       "label": "G15 840i",             "keywords": ["840i", "BMW 840i"]},
+    {"id": "g15-m850i",      "label": "G15 M850i",            "keywords": ["M850i", "BMW M850i"]},
+    {"id": "g01-x3-m40i",    "label": "G01 X3 M40i",          "keywords": ["X3 M40i", "X3M40i"]},
+    {"id": "g09-xm",         "label": "G09 XM",               "keywords": ["BMW XM", "XM 레이블"]},
+    {"id": "g26-i4-m50",     "label": "G26 i4 M50",           "keywords": ["i4 M50", "BMW i4"]},
+    {"id": "g26-i4-m60",     "label": "G26 i4 M60",           "keywords": ["i4 M60"]},
+    {"id": "g70-i7",         "label": "G70 i7 (eDrive50·xDrive60·M70)", "keywords": ["BMW i7", "i7 M70"]},
+    {"id": "i20-ix",         "label": "I20 iX (xDrive40·xDrive50·M60)", "keywords": ["BMW iX", "iX M60"]}
+  ],
+  "angles": {
+    "owned": [
+      "출고·인수 첫 한 달 체감",
+      "실제 유지비 정리(보험·연비·소모품)",
+      "고질병과 정비 포인트",
+      "데일리카로 탈 때 현실",
+      "와인딩·트랙에서 느낀 점",
+      "순정 vs 튜닝, 해 보니 남는 것",
+      "중고로 살 때 꼭 볼 체크리스트",
+      "팔고 나서 아쉬운 점·후회 없는 점",
+      "직접 타 본 다른 BMW와 비교",
+      "옵션·사양 추천"
+    ],
+    "interested": [
+      "왜 이 모델이 궁금한가(관심 포인트 정리)",
+      "제원·성격으로 본 장단점",
+      "직접 타 본 모델과 비교했을 때 기대되는 점",
+      "중고로 노린다면 볼 것",
+      "구매 전 고민되는 점(유지비·실용성)",
+      "같은 급 다른 BMW와 비교"
+    ],
+    "seasonal": {
+      "11": ["겨울 대비 관리(타이어·배터리·냉간 시동)"],
+      "12": ["겨울 대비 관리(타이어·배터리·냉간 시동)", "연말 결산: 올해 이 차와 보낸 시간"],
+      "1":  ["눈길·빙판 주행과 겨울 관리"],
+      "2":  ["눈길·빙판 주행과 겨울 관리"],
+      "3":  ["봄맞이 점검과 세차"],
+      "6":  ["여름철 열 관리와 에어컨"],
+      "7":  ["여름철 열 관리와 에어컨", "휴가철 장거리 주행 후기"],
+      "8":  ["여름철 열 관리와 에어컨", "휴가철 장거리 주행 후기"]
+    }
+  },
+  "owned_share": 0.6,
+  "cooldown_posts": 6
+}
