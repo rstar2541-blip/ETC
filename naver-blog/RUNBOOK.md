@@ -1,4 +1,4 @@
-# 매시간 실행 지침 (예약 작업용)
+# 3시간마다 실행 지침 (예약 작업용)
 
 예약 작업이 새 세션을 열 때마다 이 순서대로 한 편을 만든다. 저장소는
 `rstar2541-blip/ETC`, 브랜치는 `claude/upbeat-franklin-0nprlp`, 작업 폴더는
@@ -83,20 +83,27 @@ git push -u origin claude/upbeat-franklin-0nprlp
 push가 거절되면 `git pull --rebase origin claude/upbeat-franklin-0nprlp` 후 다시 push.
 네트워크 오류면 2·4·8·16초 간격으로 최대 4번 재시도.
 
-## 5. 카카오톡 나에게 보내기
+## 5. Gmail로 보내기
 
-PlayMCP 커넥터의 카카오톡 '나에게 보내기' 도구를 찾아(ToolSearch로 `kakao`, `카카오톡`,
-`나에게` 검색) 짧은 메시지를 보낸다.
-
-```
-[블로그 초안] <제목>
-<model.label> · <angle> · <chars>자
-https://github.com/rstar2541-blip/ETC/blob/claude/upbeat-franklin-0nprlp/naver-blog/<post_path>
+```bash
+python3 scripts/email_payload.py
 ```
 
-도구가 없거나 실패하면 보내지 않고, 마지막 응답에 "카카오 전송 건너뜀: <이유>"를 남긴다.
-메시지를 지어내 보냈다고 쓰지 않는다.
+나온 JSON으로 Gmail `send_message`를 호출한다(ToolSearch로 `select:mcp__Gmail__send_message`
+등을 불러온다).
+
+- `to`: `["rstar2541@gmail.com"]`
+- `subject`: JSON의 `subject`
+- `body`: JSON의 `body` 그대로 (마크다운 쓰지 않음)
+- `attachments`: `[{"content": <attachment_b64>, "filename": <filename>, "mimeType": "text/plain"}]`
+  — base64는 한 글자도 바꾸지 말고 그대로 옮긴다.
+
+보낸 뒤 `list_labels`에서 이름이 `BMW 블로그 초안`인 라벨 id를 찾아(현재 `Label_6`)
+돌려받은 메시지 id에 `label_message`로 붙인다. 라벨이 없으면 `create_label`로 만든다.
+
+보내기에 실패하면 내용을 지어내 보냈다고 쓰지 않고, 마지막 응답에 "메일 전송 실패: <이유>"를 남긴다.
+초안 파일은 이미 커밋돼 있으니 다음 실행에 다시 보내지 않는다.
 
 ## 6. 마무리
 
-마지막 응답에 제목, 모델, 주제, 글자 수, 트렌드 출처, 커밋 여부, 카카오 전송 여부를 한 줄씩 적는다.
+마지막 응답에 제목, 모델, 주제, 글자 수, 트렌드 출처, 커밋 여부, 메일 전송 여부를 한 줄씩 적는다.
