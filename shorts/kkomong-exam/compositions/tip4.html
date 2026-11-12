@@ -1,0 +1,145 @@
+<template>
+  <style>
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); font-weight: 900; }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Pretendard";
+      color: #17161c;
+      --accent: #b464c8;
+    }
+    #tip4-a {
+      position: absolute;
+      inset: 0;
+    }
+    #tip4-a-in {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+    }
+    #tip4-world {
+      position: absolute;
+      left: 0;
+      top: 600px;
+      width: 1080px;
+      height: 1320px;
+      overflow: hidden;
+    }
+    #tip4-scope {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 30%;
+    }
+    #tip4-b {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+    }
+    .tip4-text {
+      position: absolute;
+      left: 72px;
+      white-space: nowrap;
+    }
+    .tip4-tag { top: 214px; font-size: 48px; font-weight: 700; color: var(--accent); }
+    #tip4-h1 { top: 282px; font-size: 66px; font-weight: 700; }
+    #tip4-h2 { top: 370px; font-size: 112px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
+    #tip4-q { top: 282px; font-size: 66px; font-weight: 700; }
+    #tip4-r1 { top: 370px; font-size: 112px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
+    #tip4-r2 { top: 500px; font-size: 112px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
+    .hl { color: var(--accent); }
+    #tip4-diagram {
+      position: absolute;
+      left: 57px;
+      top: 720px;
+      width: 966px;
+      height: 320px;
+    }
+    #tip4-groups {
+      width: 966px;
+      height: 320px;
+      display: block;
+    }
+    #tip4-rings {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 966px;
+      height: 320px;
+      overflow: visible;
+    }
+    .tip4-order {
+      position: absolute;
+      top: 1060px;
+      width: 200px;
+      margin-left: -100px;
+      text-align: center;
+      font-size: 44px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    #tip4-o2 { left: 647px; }
+    #tip4-o3 { left: 887px; }
+    #tip4-o1 { left: 395px; }
+    #tip4-warn { top: 1170px; font-size: 58px; font-weight: 700; }
+    #tip4-warn .x { color: #d23c3c; }
+    .w { display: inline-block; }
+  </style>
+  <div id="root" data-composition-id="tip4" data-width="1080" data-height="1920">
+    <div id="tip4-a" class="clip" data-start="0" data-duration="3.12">
+      <div id="tip4-a-in">
+      <div id="tip4-world">
+        <img id="tip4-scope" src="assets/img/scope.jpg" alt="시험장 벽에 붙은 현미경 조작 순서 안내" />
+      </div>
+      <div class="tip4-text tip4-tag">꿀팁 4</div>
+      <div id="tip4-h1" class="tip4-text"><span class="w">현미경은</span> <span class="w">3대,</span></div>
+      <div id="tip4-h2" class="tip4-text"><span class="w">3분</span> <span class="w">20초씩</span> <span class="w">이동</span></div>
+      </div>
+    </div>
+    <div id="tip4-b" class="clip" data-start="2.6" data-duration="4.2">
+      <div class="tip4-text tip4-tag">꿀팁 4</div>
+      <div id="tip4-q" class="tip4-text"><span class="w">2번</span> <span class="w">자리에서</span> <span class="w">시작했다면?</span></div>
+      <div id="tip4-r1" class="tip4-text"><span class="w"><span class="hl">2번</span>에서</span> <span class="w">본</span> <span class="w">건</span></div>
+      <div id="tip4-r2" class="tip4-text"><span class="w"><span class="hl">2번</span></span> <span class="w">답란에!</span></div>
+      <div id="tip4-diagram" data-layout-allow-overlap>
+        <img id="tip4-groups" src="assets/img/groupA.png" alt="A조 현미경 1, 2, 3번 배치도 (작성자 그림)" />
+        <svg id="tip4-rings" viewBox="0 0 966 320" data-layout-ignore>
+          <circle id="tip4-ring2" cx="590" cy="160" r="104" fill="none" stroke="#b464c8" stroke-width="10" pathLength="100" stroke-dasharray="100 120" stroke-dashoffset="110" stroke-linecap="round" />
+          <circle id="tip4-ring3" cx="830" cy="160" r="104" fill="none" stroke="#b464c8" stroke-width="10" pathLength="100" stroke-dasharray="100 120" stroke-dashoffset="110" stroke-linecap="round" />
+          <circle id="tip4-ring1" cx="338" cy="160" r="104" fill="none" stroke="#b464c8" stroke-width="10" pathLength="100" stroke-dasharray="100 120" stroke-dashoffset="110" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div id="tip4-o2" class="tip4-order">첫 번째</div>
+      <div id="tip4-o3" class="tip4-order">두 번째</div>
+      <div id="tip4-o1" class="tip4-order">세 번째</div>
+      <div id="tip4-warn" class="tip4-text"><span class="w x">✕</span> <span class="w">보는</span> <span class="w">순서대로</span> <span class="w">쓰면</span> <span class="w">오답</span></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // whip in from the right
+      tl.fromTo("#tip4-a-in", { x: 1080, filter: "blur(16px)" }, { x: 0, filter: "blur(0px)", duration: 0.32, ease: "power3.out" }, 0);
+      tl.fromTo("#tip4-scope", { scale: 1.0, transformOrigin: "50% 25%" }, { scale: 1.1, duration: 2.8, ease: "power1.inOut" }, 0);
+      tl.fromTo("#tip4-h1 .w", { opacity: 0, color: "#c9c7cf" }, { opacity: 1, color: "#17161c", duration: 0.12, stagger: 0.09, ease: "none" }, 0.35);
+      tl.fromTo("#tip4-h2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.1, ease: "power2.out" }, 0.65);
+      // iris: the eyepiece opens onto the seating plan
+      tl.fromTo("#tip4-b", { clipPath: "circle(0% at 560px 1010px)" }, { clipPath: "circle(130% at 560px 1010px)", duration: 0.5, ease: "power2.in" }, 2.6);
+      tl.fromTo("#tip4-q .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power2.out" }, 2.95);
+      // the visiting order, 2 → 3 → 1
+      tl.fromTo("#tip4-ring2", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.3, ease: "power2.inOut" }, 3.3);
+      tl.fromTo("#tip4-o2", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none" }, 3.35);
+      tl.fromTo("#tip4-ring3", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.3, ease: "power2.inOut" }, 3.6);
+      tl.fromTo("#tip4-o3", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none" }, 3.65);
+      tl.fromTo("#tip4-ring1", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.3, ease: "power2.inOut" }, 3.9);
+      tl.fromTo("#tip4-o1", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none" }, 3.95);
+      tl.fromTo("#tip4-r1 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.08, ease: "power2.out" }, 4.1);
+      tl.fromTo("#tip4-r2 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.1, ease: "power2.out" }, 4.4);
+      tl.fromTo("#tip4-warn .w", { opacity: 0 }, { opacity: 1, duration: 0.1, stagger: 0.07, ease: "none" }, 4.75);
+      window.__timelines["tip4"] = tl;
+    })();
+  </script>
+</template>

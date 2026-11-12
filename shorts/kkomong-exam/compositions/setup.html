@@ -1,0 +1,92 @@
+<template>
+  <style>
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); font-weight: 900; }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Pretendard";
+      color: #17161c;
+      --accent: #b464c8;
+    }
+    #setup-stage {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+    }
+    #setup-world {
+      position: absolute;
+      left: 0;
+      top: 600px;
+      width: 1080px;
+      height: 1320px;
+      overflow: hidden;
+      background: #2a2a2e;
+    }
+    #setup-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #setup-img {
+      position: absolute;
+      left: -252px;
+      top: 0;
+      width: 1440px;
+      height: 1440px;
+    }
+    #setup-ring {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 1320px;
+      overflow: visible;
+    }
+    .setup-text {
+      position: absolute;
+      left: 72px;
+      white-space: nowrap;
+    }
+    #setup-l1 { top: 214px; font-size: 96px; font-weight: 900; letter-spacing: -0.03em; }
+    #setup-l2 { top: 352px; font-size: 56px; font-weight: 700; }
+    #setup-l3 { top: 420px; font-size: 104px; font-weight: 900; letter-spacing: -0.03em; color: var(--accent); }
+    .w { display: inline-block; }
+  </style>
+  <div id="root" data-composition-id="setup" data-width="1080" data-height="1920">
+    <div id="setup-stage">
+      <div id="setup-world">
+        <div id="setup-cam">
+          <img id="setup-img" src="assets/img/paper.jpg" alt="안동대학교에서 치른 식물보호산업기사 실기시험 문제지" />
+          <svg id="setup-ring" viewBox="0 0 1080 1320" data-layout-ignore>
+            <ellipse id="setup-ellipse" cx="940" cy="436" rx="112" ry="64" transform="rotate(-8 940 436)"
+              fill="none" stroke="#b464c8" stroke-width="9" stroke-linecap="round" pathLength="100"
+              stroke-dasharray="100 120" stroke-dashoffset="110" />
+          </svg>
+        </div>
+      </div>
+      <div id="setup-l1" class="setup-text"><span class="w">비전공자,</span> <span class="w">인강</span> <span class="w">5개월</span></div>
+      <div id="setup-l2" class="setup-text"><span class="w">안동대</span> <span class="w">시험장에서</span> <span class="w">배운</span></div>
+      <div id="setup-l3" class="setup-text">실전 꿀팁 5가지</div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // whip up: the new page arrives over the hook
+      tl.fromTo("#setup-stage", { y: 1920, filter: "blur(18px)" }, { y: 0, filter: "blur(0px)", duration: 0.34, ease: "power3.out" }, 0);
+      // camera drifts toward the venue written on the paper
+      tl.fromTo("#setup-cam", { scale: 1, transformOrigin: "86% 33%" }, { scale: 1.08, duration: 3.6, ease: "power1.inOut" }, 0.2);
+      // line 1: per word blur-in
+      tl.fromTo("#setup-l1 .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.09, ease: "power2.out" }, 0.38);
+      // line 2: per word from light grey to ink
+      tl.fromTo("#setup-l2 .w", { opacity: 0.0, color: "#c9c7cf" }, { opacity: 1, color: "#17161c", duration: 0.12, stagger: 0.09, ease: "none" }, 1.0);
+      // line 3: whole line blurs in
+      tl.fromTo("#setup-l3", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power2.out" }, 1.45);
+      // pen circle around the venue
+      tl.fromTo("#setup-ellipse", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.55, ease: "power2.inOut" }, 1.9);
+      window.__timelines["setup"] = tl;
+    })();
+  </script>
+</template>

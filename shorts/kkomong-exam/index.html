@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: #ffffff;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      꼬몽맘의 블로그 「안동대학교 식물보호 산업기사 실기시험 만점 받은 후기」 → 세로 숏폼
+      Scenes overlap by 0.2 s: each scene's own entrance (whip, flood, iris) covers the one before.
+    -->
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="41.3"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div id="hook" data-composition-id="hook" data-composition-src="compositions/hook.html"
+        data-start="0" data-duration="3.2" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 1"></div>
+      <div id="setup" data-composition-id="setup" data-composition-src="compositions/setup.html"
+        data-start="3" data-duration="3.8" data-track-index="2" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 2"></div>
+      <div id="tip1" data-composition-id="tip1" data-composition-src="compositions/tip1.html"
+        data-start="6.6" data-duration="4.8" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 3"></div>
+      <div id="tip2" data-composition-id="tip2" data-composition-src="compositions/tip2.html"
+        data-start="11.2" data-duration="4" data-track-index="2" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 4"></div>
+      <div id="tip3" data-composition-id="tip3" data-composition-src="compositions/tip3.html"
+        data-start="15" data-duration="6" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 5"></div>
+      <div id="tip4" data-composition-id="tip4" data-composition-src="compositions/tip4.html"
+        data-start="20.8" data-duration="6.8" data-track-index="2" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 6"></div>
+      <div id="tip5" data-composition-id="tip5" data-composition-src="compositions/tip5.html"
+        data-start="27.4" data-duration="4.4" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 7"></div>
+      <div id="payoff" data-composition-id="payoff" data-composition-src="compositions/payoff.html"
+        data-start="31.6" data-duration="5.3" data-track-index="2" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 8"></div>
+      <div id="outro" data-composition-id="outro" data-composition-src="compositions/outro.html"
+        data-start="36.7" data-duration="4.6" data-track-index="1" data-track-kind="graphics"
+        data-width="1080" data-height="1920" style="z-index: 9"></div>
+
+      <!-- Sound: effects only, each on a visible action (no music source signed in) -->
+      <audio id="sfx-hook-stamp" class="clip" src="assets/sfx/pop.mp3" data-start="0.93" data-duration="0.7" data-track-index="10" data-volume="0.8"></audio>
+      <audio id="sfx-setup-whip" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="2.98" data-duration="0.57" data-track-index="11" data-volume="0.55"></audio>
+      <audio id="sfx-tip1-flood" class="clip" src="assets/sfx/whoosh.mp3" data-start="6.58" data-duration="0.57" data-track-index="10" data-volume="0.5"></audio>
+      <audio id="sfx-tip1-stamp" class="clip" src="assets/sfx/pop.mp3" data-start="7.83" data-duration="0.7" data-track-index="11" data-volume="0.85"></audio>
+      <audio id="sfx-tip2-wipe" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="11.18" data-duration="0.57" data-track-index="10" data-volume="0.5"></audio>
+      <audio id="sfx-tip3-zoom" class="clip" src="assets/sfx/whoosh.mp3" data-start="15.1" data-duration="0.57" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-tip3-stamp" class="clip" src="assets/sfx/pop.mp3" data-start="18.93" data-duration="0.7" data-track-index="10" data-volume="0.75"></audio>
+      <audio id="sfx-tip4-whip" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="20.78" data-duration="0.57" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-tip4-iris" class="clip" src="assets/sfx/whoosh.mp3" data-start="23.5" data-duration="0.57" data-track-index="10" data-volume="0.45"></audio>
+      <audio id="sfx-tip5-whip" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="27.38" data-duration="0.57" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-payoff-flood" class="clip" src="assets/sfx/whoosh.mp3" data-start="31.6" data-duration="0.57" data-track-index="10" data-volume="0.45"></audio>
+      <audio id="sfx-payoff-rise" class="clip" src="assets/sfx/riser.mp3" data-start="31.6" data-media-start="1.6" data-duration="2.43" data-track-index="11" data-volume="0.4" data-fade-in="0.3"></audio>
+      <audio id="sfx-payoff-hit" class="clip" src="assets/sfx/impact-bass-1.mp3" data-start="34.03" data-duration="1.8" data-track-index="10" data-volume="0.8"></audio>
+      <audio id="sfx-outro-whip" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="36.68" data-duration="0.57" data-track-index="11" data-volume="0.5"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

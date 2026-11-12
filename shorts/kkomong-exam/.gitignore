@@ -1,0 +1,6 @@
+# The blog author's photos and the video made from them stay out of this public repository.
+# Recreate the photos with: python3 scripts/fetch_images.py   then render with: npx hyperframes render
+assets/img/*
+!assets/img/SOURCES.md
+renders/
+.hyperframes/

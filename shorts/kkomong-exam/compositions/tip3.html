@@ -1,0 +1,97 @@
+<template>
+  <style>
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); font-weight: 900; }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Pretendard";
+      color: #17161c;
+      --accent: #b464c8;
+    }
+    #tip3-world {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    #tip3-push {
+      position: absolute;
+      inset: 0;
+    }
+    #tip3-cam {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 900px;
+      height: 900px;
+    }
+    #tip3-img {
+      width: 900px;
+      height: 900px;
+      display: block;
+    }
+    #tip3-band {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 570px;
+      background: #ffffff;
+    }
+    .tip3-text {
+      position: absolute;
+      left: 72px;
+      white-space: nowrap;
+    }
+    #tip3-tag { top: 214px; font-size: 48px; font-weight: 700; color: var(--accent); }
+    .tip3-h1 { top: 282px; font-size: 66px; font-weight: 700; }
+    .tip3-h2 { top: 370px; font-size: 124px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
+    .tip3-h2 .hl { color: var(--accent); }
+    #tip3-sub-a { top: 1168px; font-size: 62px; font-weight: 700; }
+    #tip3-sub-b { top: 1150px; font-size: 104px; font-weight: 900; letter-spacing: -0.03em; color: var(--accent); }
+    .w { display: inline-block; }
+  </style>
+  <div id="root" data-composition-id="tip3" data-width="1080" data-height="1920">
+    <div id="tip3-world">
+      <div id="tip3-push">
+        <div id="tip3-cam" data-layout-ignore>
+          <img id="tip3-img" src="assets/img/paper2.jpg" alt="문제지 아래에 손으로 적어 둔 계산값 1000mL 0.63mL, 0.75g" />
+        </div>
+      </div>
+    </div>
+    <div id="tip3-band">
+      <div id="tip3-tag" class="tip3-text">꿀팁 3</div>
+      <div id="tip3-h1-a" class="tip3-text tip3-h1 clip" data-start="0" data-duration="3.05"><span class="w">계산한</span> <span class="w">값은</span></div>
+      <div id="tip3-h2-a" class="tip3-text tip3-h2 clip" data-start="0" data-duration="3.05"><span class="w">꼭</span> <span class="w hl">적어두세요</span></div>
+      <div id="tip3-h1-b" class="tip3-text tip3-h1 clip" data-start="3" data-duration="3"><span class="w">문제지를</span> <span class="w">두고</span> <span class="w">왔는데</span></div>
+      <div id="tip3-h2-b" class="tip3-text tip3-h2 clip" data-start="3" data-duration="3"><span class="w">손바닥</span> <span class="w">메모가</span></div>
+    </div>
+    <div id="tip3-sub-a" class="tip3-text clip" data-start="1.25" data-duration="1.8"><span class="w">실습</span> <span class="w">땐</span> <span class="w">다시</span> <span class="w">안</span> <span class="w">알려줘요</span></div>
+    <div id="tip3-sub-b" class="tip3-text clip" data-start="3.9" data-duration="2.1"><span id="tip3-sub-b-in" class="w">신의 한 수!</span></div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // zoom through: the whole exam paper, then the camera dives into the handwritten values
+      tl.fromTo("#tip3-cam",
+        { x: -420, y: 0, scale: 2.134, transformOrigin: "0% 0%" },
+        { x: -1635, y: -2360, scale: 3.85, duration: 0.75, ease: "power3.inOut" }, 0);
+      tl.fromTo("#tip3-push", { scale: 1, transformOrigin: "60% 45%" }, { scale: 1.06, duration: 5.2, ease: "power1.inOut" }, 0.8);
+      // the white label band drops in as the zoom lands
+      tl.fromTo("#tip3-band", { y: -620 }, { y: 0, duration: 0.45, ease: "expo.out" }, 0.45);
+      tl.fromTo("#tip3-h1-a .w", { opacity: 0, color: "#c9c7cf" }, { opacity: 1, color: "#17161c", duration: 0.12, stagger: 0.08, ease: "none" }, 0.7);
+      tl.fromTo("#tip3-h2-a .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.09, ease: "power2.out" }, 0.95);
+      tl.fromTo("#tip3-sub-a .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.07, ease: "power2.out" }, 1.25);
+      // blur swap on the same band
+      tl.to(["#tip3-h1-a", "#tip3-h2-a", "#tip3-sub-a"], { opacity: 0, filter: "blur(8px)", duration: 0.16, ease: "power2.in" }, 2.85);
+      tl.fromTo("#tip3-h1-b .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power2.out" }, 3.02);
+      tl.fromTo("#tip3-h2-b .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.14, stagger: 0.1, ease: "power2.out" }, 3.35);
+      tl.fromTo("#tip3-sub-b-in", { scale: 1.5, rotation: -6, opacity: 0, transformOrigin: "20% 60%" }, { scale: 1, rotation: -3, opacity: 1, duration: 0.3, ease: "power4.out" }, 3.9);
+      window.__timelines["tip3"] = tl;
+    })();
+  </script>
+</template>

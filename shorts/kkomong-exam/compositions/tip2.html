@@ -1,0 +1,109 @@
+<template>
+  <style>
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); font-weight: 900; }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Pretendard";
+      color: #17161c;
+      --accent: #b464c8;
+    }
+    #tip2-stage {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+    }
+    #tip2-world {
+      position: absolute;
+      left: 0;
+      top: 880px;
+      width: 1080px;
+      height: 1040px;
+      overflow: hidden;
+      background: #e9e9ec;
+    }
+    #tip2-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #tip2-img {
+      position: absolute;
+      left: -700px;
+      top: -675px;
+      width: 2862px;
+      height: 2862px;
+    }
+    #tip2-marks {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 1040px;
+      overflow: visible;
+    }
+    .tip2-text {
+      position: absolute;
+      left: 72px;
+      white-space: nowrap;
+    }
+    #tip2-tag { top: 214px; font-size: 48px; font-weight: 700; color: var(--accent); }
+    #tip2-l1 { top: 282px; font-size: 66px; font-weight: 700; }
+    #tip2-l2 { top: 368px; font-size: 156px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
+    #tip2-no { top: 588px; font-size: 76px; font-weight: 700; color: #8b8994; }
+    #tip2-strike {
+      position: absolute;
+      left: -8px;
+      right: -8px;
+      top: 52%;
+      height: 10px;
+      background: #17161c;
+      border-radius: 5px;
+    }
+    #tip2-calc { top: 708px; font-size: 52px; font-weight: 700; }
+    #tip2-calc .hl { color: var(--accent); }
+    .w { display: inline-block; }
+    .rel { position: relative; display: inline-block; }
+  </style>
+  <div id="root" data-composition-id="tip2" data-width="1080" data-height="1920">
+    <div id="tip2-stage">
+      <div id="tip2-world">
+        <div id="tip2-cam">
+          <img id="tip2-img" src="assets/img/paper2.jpg" alt="실기시험 수험자 유의사항: 검은색 필기구만 사용, 그 외 필기구는 0점 처리" />
+          <svg id="tip2-marks" viewBox="0 0 1080 1040" data-layout-ignore>
+            <ellipse id="tip2-ring1" cx="720" cy="134" rx="84" ry="42" transform="rotate(-4 720 134)" fill="none"
+              stroke="#b464c8" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="100 120" stroke-dashoffset="110" />
+            <ellipse id="tip2-ring2" cx="772" cy="211" rx="58" ry="38" transform="rotate(-4 772 211)" fill="none"
+              stroke="#b464c8" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="100 120" stroke-dashoffset="110" />
+          </svg>
+        </div>
+      </div>
+      <div id="tip2-tag" class="tip2-text">꿀팁 2</div>
+      <div id="tip2-l1" class="tip2-text"><span class="w">답안은</span> <span class="w">무조건</span></div>
+      <div id="tip2-l2" class="tip2-text"><span class="w">검</span><span class="w">은</span><span class="w">색</span> <span class="w">펜</span></div>
+      <div id="tip2-no" class="tip2-text"><span class="rel">연필 · 샤프<span id="tip2-strike"></span></span></div>
+      <div id="tip2-calc" class="tip2-text"><span class="w">계산기는</span> <span class="w">공학용</span> <span class="w">말고</span> <span class="w hl">일반</span> <span class="w hl">계산기</span></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // white page wipes down over the purple
+      tl.fromTo("#tip2-stage", { clipPath: "inset(0% 0% 100% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.38, ease: "power2.inOut" }, 0);
+      tl.fromTo("#tip2-cam", { scale: 1.06, transformOrigin: "75% 15%" }, { scale: 1, duration: 3.8, ease: "power1.out" }, 0);
+      tl.fromTo("#tip2-tag", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 0.3);
+      tl.fromTo("#tip2-l1 .w", { opacity: 0, color: "#c9c7cf" }, { opacity: 1, color: "#17161c", duration: 0.12, stagger: 0.08, ease: "none" }, 0.35);
+      // the name of the rule: per letter, a frame apart
+      tl.fromTo("#tip2-l2 .w", { opacity: 0.3, filter: "blur(4px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.12, stagger: 0.1, ease: "power2.out" }, 0.6);
+      tl.fromTo("#tip2-l2", { opacity: 0 }, { opacity: 1, duration: 0.06, ease: "none" }, 0.58);
+      tl.fromTo("#tip2-ring1", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.45, ease: "power2.inOut" }, 1.0);
+      tl.fromTo("#tip2-no", { opacity: 0 }, { opacity: 1, duration: 0.15, ease: "none" }, 1.35);
+      tl.fromTo("#tip2-strike", { scaleX: 0, transformOrigin: "0% 50%" }, { scaleX: 1, duration: 0.28, ease: "power3.out" }, 1.6);
+      tl.fromTo("#tip2-ring2", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.45, ease: "power2.inOut" }, 1.7);
+      tl.fromTo("#tip2-calc .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power2.out" }, 2.2);
+      window.__timelines["tip2"] = tl;
+    })();
+  </script>
+</template>

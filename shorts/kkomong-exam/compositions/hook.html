@@ -1,0 +1,89 @@
+<template>
+  <style>
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); font-weight: 900; }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #ffffff;
+      font-family: "Pretendard";
+      color: #17161c;
+      --accent: #b464c8;
+    }
+    #hook-world {
+      position: absolute;
+      left: 0;
+      top: 560px;
+      width: 1080px;
+      height: 1360px;
+      overflow: hidden;
+    }
+    #hook-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #hook-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 60%;
+    }
+    .hook-text {
+      position: absolute;
+      left: 72px;
+      white-space: nowrap;
+    }
+    #hook-tag { top: 214px; font-size: 48px; font-weight: 700; color: var(--accent); }
+    #hook-l1 { top: 282px; font-size: 118px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; }
+    #hook-l2 { top: 412px; font-size: 118px; font-weight: 900; letter-spacing: -0.03em; line-height: 1.1; }
+    #hook-l2 .hl { color: var(--accent); }
+    #hook-stamp {
+      position: absolute;
+      left: 640px;
+      top: 760px;
+      width: 330px;
+      height: 330px;
+    }
+    #hook-seal {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 12px solid var(--accent);
+      background: rgba(255, 255, 255, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-weight: 900;
+      line-height: 1;
+    }
+    #hook-seal .s1 { font-size: 52px; letter-spacing: -0.02em; }
+    #hook-seal .s2 { font-size: 112px; letter-spacing: -0.04em; margin-top: 8px; }
+  </style>
+  <div id="root" data-composition-id="hook" data-width="1080" data-height="1920">
+    <div id="hook-world">
+      <div id="hook-cam">
+        <img id="hook-img" src="assets/img/lab.jpg" alt="비커와 실린더가 놓인 실험실 책상" />
+      </div>
+    </div>
+    <div id="hook-tag" class="hook-text">식물보호산업기사 실기 후기</div>
+    <div id="hook-l1" class="hook-text">실험복 없이</div>
+    <div id="hook-l2" class="hook-text"><span class="hl">만점</span> 받았어요</div>
+    <div id="hook-stamp" class="clip" data-start="0.9" data-duration="2.3" data-layout-allow-overlap>
+      <div id="hook-seal"><span class="s1">작업형</span><span class="s2">40점</span></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // camera: slow push on the lab photo for the whole shot
+      tl.fromTo("#hook-cam", { scale: 1.36, transformOrigin: "50% 100%" }, { scale: 1.43, duration: 3.2, ease: "power1.inOut" }, 0);
+      // the seal is stamped down
+      tl.fromTo("#hook-seal", { scale: 1.7, rotation: -18, opacity: 0 }, { scale: 1, rotation: -10, opacity: 1, duration: 0.32, ease: "power4.out" }, 0.9);
+      window.__timelines["hook"] = tl;
+    })();
+  </script>
+</template>

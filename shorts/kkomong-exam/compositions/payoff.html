@@ -1,0 +1,106 @@
+<template>
+  <style>
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Medium.woff2") format("woff2"); font-weight: 500; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Bold.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "Pretendard"; src: url("assets/fonts/Pretendard-Black.woff2") format("woff2"); font-weight: 900; }
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      font-family: "Pretendard";
+      color: #17161c;
+      --accent: #b464c8;
+    }
+    #payoff-stage {
+      position: absolute;
+      inset: 0;
+      background: #f3e9f6;
+    }
+    #payoff-cam {
+      position: absolute;
+      inset: 0;
+    }
+    #payoff-band {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 540px;
+      background: #f3e9f6;
+    }
+    #payoff-card {
+      position: absolute;
+      left: 190px;
+      top: 560px;
+      width: 700px;
+      height: 920px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 18px 40px rgba(60, 20, 70, 0.18);
+    }
+    #payoff-img {
+      width: 700px;
+      height: 920px;
+      display: block;
+    }
+    #payoff-ring {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 1920px;
+      overflow: visible;
+    }
+    .payoff-text {
+      position: absolute;
+      left: 72px;
+      white-space: nowrap;
+    }
+    #payoff-q { top: 214px; font-size: 64px; font-weight: 700; }
+    #payoff-h { top: 296px; font-size: 112px; font-weight: 900; letter-spacing: -0.04em; line-height: 1.15; }
+    #payoff-num { display: inline-block; position: relative; width: 1.2em; height: 129px; overflow: hidden; vertical-align: top; text-align: right; }
+    #payoff-strip { position: absolute; left: 0; right: 0; top: 0; }
+    .num-i { height: 129px; line-height: 129px; }
+    #payoff-full { display: inline-block; color: var(--accent); }
+    #payoff-sub { top: 446px; font-size: 54px; font-weight: 700; }
+    .w { display: inline-block; }
+  </style>
+  <div id="root" data-composition-id="payoff" data-width="1080" data-height="1920">
+    <div id="payoff-stage">
+      <div id="payoff-cam">
+      <div id="payoff-card">
+        <img id="payoff-img" src="assets/img/score.jpg" alt="Q-Net 득점조회: 2021년 정기 산업기사 1회 식물보호산업기사 실기 합격, 작업형 40, 필답형 40, 총점 80" />
+      </div>
+      <svg id="payoff-ring" viewBox="0 0 1080 1920" data-layout-ignore>
+        <ellipse id="payoff-ellipse" cx="644" cy="1279" rx="92" ry="52" fill="none" stroke="#b464c8" stroke-width="10"
+          stroke-linecap="round" pathLength="100" stroke-dasharray="100 120" stroke-dashoffset="110" />
+      </svg>
+      </div>
+      <div id="payoff-band"></div>
+      <div id="payoff-q" class="payoff-text">결과는?</div>
+      <div id="payoff-h" class="payoff-text"><span class="w">작업형</span> <span class="w"><span id="payoff-num" data-layout-ignore><span id="payoff-strip"><div class="num-i">0</div><div class="num-i">1</div><div class="num-i">2</div><div class="num-i">3</div><div class="num-i">4</div><div class="num-i">5</div><div class="num-i">6</div><div class="num-i">7</div><div class="num-i">8</div><div class="num-i">9</div><div class="num-i">10</div><div class="num-i">11</div><div class="num-i">12</div><div class="num-i">13</div><div class="num-i">14</div><div class="num-i">15</div><div class="num-i">16</div><div class="num-i">17</div><div class="num-i">18</div><div class="num-i">19</div><div class="num-i">20</div><div class="num-i">21</div><div class="num-i">22</div><div class="num-i">23</div><div class="num-i">24</div><div class="num-i">25</div><div class="num-i">26</div><div class="num-i">27</div><div class="num-i">28</div><div class="num-i">29</div><div class="num-i">30</div><div class="num-i">31</div><div class="num-i">32</div><div class="num-i">33</div><div class="num-i">34</div><div class="num-i">35</div><div class="num-i">36</div><div class="num-i">37</div><div class="num-i">38</div><div class="num-i">39</div><div class="num-i">40</div></span></span>점</span> <span id="payoff-full">만점!</span></div>
+      <div id="payoff-sub" class="payoff-text"><span class="w">기사</span><span class="w">·산업기사</span> <span class="w">둘</span> <span class="w">다</span> <span class="w">합격</span></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // colour flood from the bottom centre
+      tl.fromTo("#payoff-stage", { clipPath: "circle(0% at 540px 1700px)" }, { clipPath: "circle(140% at 540px 1700px)", duration: 0.45, ease: "power2.inOut" }, 0);
+      tl.fromTo("#payoff-q", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power2.out" }, 0.3);
+      // the real score screen is carried up into frame
+      tl.fromTo("#payoff-card", { y: 900, filter: "blur(10px)" }, { y: 0, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, 0.45);
+      tl.fromTo("#payoff-h", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none" }, 1.0);
+      // count-up 0 → 40: a strip of numbers rolls like an odometer and stops on 40
+      tl.fromTo("#payoff-strip", { y: 0 }, { y: -40 * 129, duration: 1.3, ease: "power3.out" }, 1.05);
+      tl.fromTo("#payoff-ellipse", { attr: { "stroke-dashoffset": 110 } }, { attr: { "stroke-dashoffset": 0 }, duration: 0.5, ease: "power2.inOut" }, 1.6);
+      // punch-in: the score row comes up to meet the headline
+      tl.fromTo("#payoff-cam", { scale: 1, y: 0, transformOrigin: "644px 1279px" }, { scale: 1.75, y: -300, duration: 0.55, ease: "power3.inOut" }, 2.0);
+      // the hit
+      tl.fromTo("#payoff-full", { opacity: 0, scale: 1.6, rotation: -8, transformOrigin: "30% 60%" }, { opacity: 1, scale: 1, rotation: -3, duration: 0.28, ease: "power4.out" }, 2.4);
+      tl.fromTo("#payoff-sub .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.08, ease: "power2.out" }, 2.8);
+      window.__timelines["payoff"] = tl;
+    })();
+  </script>
+</template>
