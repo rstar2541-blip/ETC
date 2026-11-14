@@ -1,0 +1,639 @@
+<title>트렌드 라이터</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* 레이아웃: 한 줄 폭 720px의 단일 칼럼. 위에 고정된 머리말과 4단계 탭, 아래로 카드가 순서대로 쌓인다. */
+:root {
+  --bg: #f5f4ef; --surface: #ffffff; --surface-2: #efede6; --line: #dcd9cf;
+  --text: #1d1c19; --muted: #6a675e; --accent: #0b6b52; --accent-ink: #ffffff; --accent-soft: #e0f0ea;
+  --gain: #0b6b52; --loss: #9a5b00; --loss-soft: #fbeed3; --threat: #a8322b; --threat-soft: #fbe3e0;
+  --font: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171a; --surface: #1e2125; --surface-2: #272b30; --line: #353a41;
+    --text: #ecebe6; --muted: #a09d94; --accent: #58c7a4; --accent-ink: #0c1f19; --accent-soft: #1d3a31;
+    --gain: #58c7a4; --loss: #e5b25a; --loss-soft: #3b2f17; --threat: #ef8a82; --threat-soft: #43211e;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171a; --surface: #1e2125; --surface-2: #272b30; --line: #353a41;
+  --text: #ecebe6; --muted: #a09d94; --accent: #58c7a4; --accent-ink: #0c1f19; --accent-soft: #1d3a31;
+  --gain: #58c7a4; --loss: #e5b25a; --loss-soft: #3b2f17; --threat: #ef8a82; --threat-soft: #43211e;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font: 16px/1.6 var(--font); padding-block: 0 40px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, textarea, select { font: inherit; color: inherit; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 54px; }
+header.top h1 { font-size: 18px; margin: 0; letter-spacing: -0.02em; font-weight: 700; }
+nav.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding-block: 12px 4px; }
+nav.steps button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 4px; font-size: 13.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+nav.steps button[aria-current="step"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+nav.steps button.done:not([aria-current]) { border-color: var(--accent); color: var(--accent); }
+main { display: flex; flex-direction: column; gap: 14px; padding-top: 10px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 16px; min-width: 0; }
+.card h2 { font-size: 17px; margin: 0 0 6px; letter-spacing: -0.02em; text-wrap: balance; }
+.card h3 { font-size: 15px; margin: 16px 0 6px; }
+.hint { color: var(--muted); font-size: 13.5px; margin: 4px 0 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; margin-bottom: 8px; }
+textarea, input[type=text], select { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px; }
+textarea { resize: vertical; min-height: 84px; line-height: 1.55; }
+label.f { display: block; font-size: 13.5px; color: var(--muted); margin: 12px 0 4px; }
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 9px 14px; cursor: pointer; font-weight: 600; font-size: 14.5px; min-height: 42px; text-decoration: none; color: var(--text); display: inline-flex; align-items: center; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; }
+.btn.small { min-height: 34px; padding: 5px 10px; font-size: 13px; }
+.btn.danger { color: var(--threat); }
+.icon-btn { border: 0; background: transparent; cursor: pointer; padding: 8px 10px; border-radius: 8px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.status { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); font-size: 14px; }
+.status .msg { flex: 1; min-width: 0; }
+.spin { width: 16px; height: 16px; border: 2px solid var(--accent); border-right-color: transparent; border-radius: 50%; animation: sp .8s linear infinite; flex: none; }
+@keyframes sp { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+.notice { border-left: 3px solid var(--loss); background: var(--loss-soft); padding: 8px 12px; border-radius: 6px; font-size: 13.5px; margin: 10px 0; }
+.notice.err { border-color: var(--threat); background: var(--threat-soft); }
+ul.cands { list-style: none; margin: 10px 0 0; padding: 0; }
+ul.cands li { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+ul.cands li:first-child { border-top: 0; }
+ul.cands .rank { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; text-align: center; }
+ul.cands .pick { text-align: left; background: none; border: 0; padding: 2px 0; cursor: pointer; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+ul.cands li.sel .pick { color: var(--accent); }
+ul.cands .kwrow { grid-column: 2 / 4; display: flex; gap: 8px; align-items: center; }
+ul.cands .kwrow input { flex: 1; min-width: 0; padding: 6px 10px; font-size: 13.5px; }
+.badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 700; white-space: nowrap; background: var(--text); color: var(--bg); margin-left: 6px; }
+.tgroup { margin-top: 14px; }
+.tgroup h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.tgroup h3 i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.tgroup.gain h3 i { background: var(--gain); } .tgroup.loss h3 i { background: var(--loss); } .tgroup.threat h3 i { background: var(--threat); }
+.title-btn { display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px; margin: 6px 0; cursor: pointer; line-height: 1.45; overflow-wrap: anywhere; }
+.title-btn.sel { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+details { margin-top: 12px; }
+details summary { cursor: pointer; font-weight: 600; font-size: 14.5px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex-wrap: wrap; }
+.seg button { border: 0; background: var(--surface); padding: 8px 14px; cursor: pointer; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); font-weight: 700; }
+.article { margin-top: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); line-height: 1.75; overflow-wrap: anywhere; }
+.article h3 { font-size: 17px; margin: 26px 0 10px; }
+.article p { margin: 0 0 16px; white-space: pre-line; }
+.article .ph { color: var(--muted); }
+.count { font-size: 13px; color: var(--muted); margin-top: 8px; font-variant-numeric: tabular-nums; }
+.slot { border-top: 1px solid var(--line); padding: 14px 0; }
+.slot h3 { margin: 0 0 8px; }
+.slot .two { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; align-items: start; margin-top: 8px; }
+dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); padding: 0; width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 40px); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog .dh { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+dialog .dh h2 { margin: 0; font-size: 17px; }
+dialog .db { padding: 4px 16px 18px; }
+.hist { border-top: 1px solid var(--line); padding: 10px 0; display: flex; gap: 8px; align-items: center; }
+.hist button.open { flex: 1; min-width: 0; text-align: left; background: none; border: 0; cursor: pointer; padding: 0; overflow-wrap: anywhere; }
+.hist small { color: var(--muted); display: block; }
+#toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); z-index: 20; }
+#toast.on { opacity: 1; }
+</style>
+
+<header class="top"><div class="wrap">
+  <h1>트렌드 라이터</h1>
+  <div><button class="icon-btn" data-act="openHistory">기록</button><button class="icon-btn" data-act="openSettings">설정</button></div>
+</div></header>
+<div class="wrap">
+  <nav class="steps" id="steps" aria-label="단계"></nav>
+  <main id="panel"></main>
+</div>
+<dialog id="dlgSettings"><div class="dh"><h2>설정</h2><button class="icon-btn" data-act="closeDialog">닫기</button></div><div class="db"></div></dialog>
+<dialog id="dlgHistory"><div class="dh"><h2>기록</h2><button class="icon-btn" data-act="closeDialog">닫기</button></div><div class="db"></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ------------------------------------------------------------------ 기본 프롬프트 */
+const DEFAULT_TITLE_PROMPT = `# 역할
+당신은 네이버 홈피드에서 스크롤을 멈추게 만드는 블로그 제목 카피라이터입니다.
+목표는 과장이나 거짓 없이 클릭률(CTR)을 높이는 것입니다.
+
+# 주제
+{{topic}}
+
+# 확인된 자료
+{{notes}}
+
+# 만들 것
+아래 세 가지 심리 유형으로 제목을 각각 5개씩, 총 15개 만드세요.
+- 이득형: 읽으면 얻는 것(정보, 기회, 먼저 아는 즐거움)을 앞세웁니다.
+- 손해형: 모르고 지나치면 놓치는 것, 잘못 알고 있던 것을 짚습니다.
+- 위협형: 예상 밖의 반전, 통념과 다른 사실로 긴장감을 줍니다.
+그리고 유형마다 가장 클릭될 제목 1개를 BEST로 고르세요. BEST는 그 유형의 5개 중 하나여야 합니다.
+
+# 제목 규칙
+- 핵심 키워드를 제목 맨 앞에 둡니다.
+- 28~42자 안팎으로, 모바일에서 한눈에 읽히게 씁니다.
+- "이 조건", "이 숫자"처럼 따옴표로 묶은 궁금증 장치는 제목당 한 번까지만 씁니다.
+- 숫자, 금액, 순위 같은 구체적인 값은 확인된 자료에 있는 것만 씁니다.
+- 15개의 문장 구조와 끝맺음이 서로 겹치지 않게 합니다.
+- 자료에 없는 내용, 사실과 다른 내용, 본문에서 답할 수 없는 약속은 쓰지 않습니다.
+- 특정 인물을 비방하거나 확인되지 않은 의혹을 사실처럼 쓰지 않습니다.
+- 이모지와 특수문자 장식은 쓰지 않습니다.`;
+
+const DEFAULT_ARTICLE_PROMPT = `# 역할
+당신은 네이버 홈피드에 노출되는 블로그 글을 쓰는 작가입니다.
+이 글의 목적은 단순한 정보 전달이 아니라, 끝까지 읽게 만들고(체류시간) 댓글과 공감을 이끌어내는 것입니다.
+
+# 제목
+{{title}}
+
+# 주제
+{{topic}}
+
+# 확인된 자료
+{{notes}}
+
+# 글의 흐름
+1. 도입(3~4단락): 요즘 상황, 독자가 궁금해할 지점, 제목이 던진 궁금증 순서로 씁니다. 답은 바로 주지 않습니다.
+2. 본문: 소제목 {{sections}}개. 소제목마다 궁금증 하나를 풀고, 다음 소제목이 궁금해지는 한 줄로 넘어갑니다.
+3. 제목이 약속한 답은 글 중반에 분명하게 밝힙니다.
+4. 마무리: 핵심을 두세 줄로 정리하고, 독자의 생각을 묻는 질문 하나로 끝냅니다.
+
+# 문체
+- 한 단락은 1~2줄입니다. 한 줄은 공백 포함 22자 안팎에서 자연스럽게 줄바꿈하고, 단락 사이는 한 줄 띄웁니다.
+- "~요", "~네요", "~거든요" 같은 부드러운 구어체로 씁니다. 문장 끝 마침표는 생략해도 됩니다.
+- 글쓴이의 느낌이나 생각을 소제목 구간마다 한두 문장 넣습니다.
+- 강조할 단락은 **굵게** 표시하되 소제목 구간마다 한 번까지만 씁니다.
+- 분량은 공백 포함 약 {{length}}자입니다.
+{{tone}}
+
+# 사실 규칙
+- 숫자, 날짜, 이름, 순위는 확인된 자료에 있는 것만 씁니다.
+- 자료에 없는 내용은 지어내지 않습니다. 확실하지 않으면 "~로 알려졌어요", "아직 확정된 건 아니에요"처럼 표시합니다.
+- 특정 인물에 대한 비방이나 확인되지 않은 의혹은 쓰지 않습니다.
+
+# 출력 형식
+- 제목은 다시 쓰지 않습니다.
+- 소제목은 줄 맨 앞에 "## "를 붙입니다.
+- 그 밖의 마크다운(목록, 표, 링크)과 이모지는 쓰지 않습니다.
+- 글만 출력합니다. 설명이나 머리말은 붙이지 않습니다.`;
+
+const NO_NOTES = '(자료 없음. 이 주제의 최신 사실을 확인할 수 없습니다. 구체적인 숫자, 날짜, 발언, 순위를 지어내지 말고 널리 알려진 범위에서만 쓰세요. 확인이 필요한 자리에는 [확인 필요]라고 적으세요.)';
+const LENGTHS = { short: { label: '짧게', chars: 1200, sections: 3 }, mid: { label: '보통', chars: 1800, sections: 4 }, long: { label: '길게', chars: 2600, sections: 5 } };
+const MAX_NOTES = 30000;
+
+/* ------------------------------------------------------------------ 상태 (이 브라우저에만 저장) */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const DEFAULT_SETTINGS = { tier: 'default', tone: '', titlePrompt: '', articlePrompt: '' };
+const newSession = () => ({ id: Date.now().toString(36), step: 1, paste: '', cands: [], topic: '', notes: '', titles: null, manualTitles: '', title: '', length: 'mid', article: '', slots: [] });
+let settings = Object.assign({}, DEFAULT_SETTINGS, store.get('tw.settings', {}));
+let S = Object.assign(newSession(), store.get('tw.session', {}));
+let hist = store.get('tw.history', []);
+const ui = { busy: null, abort: null, editArticle: false, error: '', statusMsg: '', claude: 'pending', confirmNew: false };
+let sample = null;
+let saveTimer = null;
+function save() { clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set('tw.session', S), 250); }
+// 창을 닫거나 다른 앱으로 넘어갈 때는 기다리지 않고 바로 저장한다.
+for (const ev of ['pagehide', 'visibilitychange']) addEventListener(ev, () => { clearTimeout(saveTimer); store.set('tw.session', S); });
+
+/* ------------------------------------------------------------------ 도우미 */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2600); }
+function fill(tpl, vars) { return tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] == null ? '' : vars[k]); }
+function setPath(obj, path, val) { const ks = path.split('.'); let o = obj; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = val; }
+const notesText = () => S.notes.trim().slice(0, MAX_NOTES);
+
+function selectionCopy(text, html) {
+  const d = document.createElement('div');
+  d.contentEditable = 'true'; d.style.cssText = 'position:fixed;left:-9999px;white-space:pre-wrap';
+  if (html) d.innerHTML = html; else d.textContent = text;
+  document.body.appendChild(d);
+  const r = document.createRange(); r.selectNodeContents(d);
+  const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  let ok = false; try { ok = document.execCommand('copy'); } catch {}
+  sel.removeAllRanges(); d.remove(); return ok;
+}
+async function copyText(text, html, label) {
+  let ok = false;
+  try {
+    if (html && window.ClipboardItem && navigator.clipboard.write) {
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
+    } else await navigator.clipboard.writeText(text);
+    ok = true;
+  } catch {
+    try { await navigator.clipboard.writeText(text); ok = true; } catch { ok = selectionCopy(text, html); }
+  }
+  toast(ok ? label + ' 복사했어요' : '복사하지 못했어요. 직접 선택해 복사해 주세요');
+}
+
+/* ------------------------------------------------------------------ Claude (보는 사람의 claude.ai 계정으로 호출) */
+const ERR = {
+  cancelled: '',
+  not_granted: 'Claude 사용을 허용하지 않아 자동 생성을 쓸 수 없어요. 페이지를 새로 고쳐 허용하거나, 프롬프트 복사 버튼을 써 주세요.',
+  sampling_disabled: '이 계정에서는 Claude 자동 생성을 쓸 수 없어요. 프롬프트 복사 버튼을 써 주세요.',
+  rate_limited: '사용량 한도에 닿았어요. 잠시 뒤에 다시 눌러 주세요.',
+  session_expired: '로그인이 만료됐어요. claude.ai에 다시 로그인해 주세요.',
+  refused: 'Claude가 이 요청을 거절했어요. 주제나 표현을 바꿔 다시 시도해 주세요.',
+  empty_completion: '답이 비어 있어요. 자료를 줄이거나 주제를 바꿔 다시 시도해 주세요.',
+  invalid_json: '결과를 읽지 못했어요. 다시 눌러 주세요.',
+  prompt_too_large: '붙여넣은 자료가 너무 길어요. 줄여서 다시 시도해 주세요.',
+  upstream_error: '연결이 잠시 끊겼어요. 다시 눌러 주세요.',
+};
+const HIDE_CODES = ['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'];
+function explain(e) {
+  if (e && e.code) { if (HIDE_CODES.includes(e.code)) ui.claude = 'absent'; return e.code in ERR ? ERR[e.code] : ERR.upstream_error; }
+  return (e && e.message) || '알 수 없는 오류가 났어요.';
+}
+const canAsk = () => ui.claude === 'ready' && !!sample;
+function setStatus(msg) { ui.statusMsg = msg; const m = $('#status .msg'); if (m) m.textContent = msg; }
+async function task(name, startMsg, fn) {
+  if (ui.busy || !canAsk()) return;
+  ui.busy = name; ui.error = ''; ui.statusMsg = startMsg; ui.abort = new AbortController(); render();
+  try { await fn(ui.abort.signal); }
+  catch (e) { ui.error = explain(e); if (e && e.code && e.text && name === 'article' && e.code !== 'refused') { S.article = e.text.trim(); syncSlots(true); } }
+  finally { ui.busy = null; ui.abort = null; save(); render(); }
+}
+
+/* ------------------------------------------------------------------ 1단계: 주제와 자료 */
+function parsePaste(text) {
+  const out = [];
+  for (let line of text.split(/\r?\n/)) {
+    line = line.replace(/^[\s\-•·*]+/, '').replace(/^\(?\d{1,2}\)?(위|[.)\]:]|\s)\s*/, '').replace(/^[①-⑳]\s*/, '').trim();
+    if (line.length < 2 || /^[\d\s.,%]+$/.test(line)) continue;
+    out.push(line.slice(0, 80));
+  }
+  return out;
+}
+function addCands(list) {
+  const have = new Set(S.cands.map(c => c.text)); let n = 0;
+  for (const text of list) { if (have.has(text) || S.cands.length >= 40) continue; have.add(text); n++; S.cands.push({ text, kw: text.length <= 14 ? text : '' }); }
+  return n;
+}
+async function doKeywords() {
+  const need = S.cands.filter(c => !c.kw.trim());
+  if (!need.length) { toast('모든 후보에 검색 키워드가 있어요'); return; }
+  await task('kw', '검색 키워드를 뽑는 중…', async signal => {
+    const arr = await sample.json(`아래는 블로그 글감 후보(기사 제목 또는 주제) ${need.length}개입니다. 각각에 대해 사람들이 네이버에서 실제로 검색할 핵심 검색어를 하나씩 뽑아 주세요.
+- 2~3단어, 15자 이내 (예: "구자욱 FA", "성시경 문가영")
+- 입력과 같은 순서, 같은 개수의 문자열 JSON 배열만 출력합니다. 예: ["구자욱 FA", "수능 등급컷"]
+
+${need.map((c, i) => (i + 1) + '. ' + c.text).join('\n')}`, { modelTier: 'quick', signal });
+    if (!Array.isArray(arr)) throw { code: 'invalid_json' };
+    need.forEach((c, i) => { if (arr[i]) c.kw = String(arr[i]).slice(0, 30); });
+  });
+}
+function statusBox() {
+  return `${ui.error ? `<div class="notice err" role="alert">${esc(ui.error)}</div>` : ''}
+  ${ui.busy ? `<div class="status" id="status"><span class="spin"></span><span class="msg">${esc(ui.statusMsg)}</span><button class="btn small ghost" data-act="cancel">멈춤</button></div>` : ''}`;
+}
+function claudeNotice() {
+  if (ui.claude === 'pending') return '<p class="hint">Claude 연결을 확인하는 중…</p>';
+  if (ui.claude === 'absent') return '<div class="notice">이 화면에서는 Claude 자동 생성을 쓸 수 없어요. 프롬프트 복사 버튼으로 Claude 대화창에 붙여넣어 쓰세요.</div>';
+  return '';
+}
+function viewTopic() {
+  const rows = S.cands.map((c, i) => `
+    <li class="${S.topic && S.topic === c.text ? 'sel' : ''}">
+      <span class="rank">${i + 1}</span>
+      <button class="pick" data-act="pick" data-i="${i}" title="이 주제로 선택">${esc(c.text)}</button>
+      <button class="icon-btn" data-act="delCand" data-i="${i}" aria-label="후보 삭제">✕</button>
+      <div class="kwrow">
+        <input id="kw${i}" type="text" data-bind="cands.${i}.kw" value="${esc(c.kw)}" placeholder="검색 키워드 (예: 구자욱 FA)" aria-label="검색 키워드">
+        <button class="btn small ghost" data-act="copyKw" data-i="${i}">복사</button>
+      </div>
+    </li>`).join('');
+  const len = S.notes.trim().length;
+  return `
+  <section class="card">
+    <h2>후보 모으기</h2>
+    <p class="hint">크리에이터 어드바이저의 메인 유입 트렌드에서 본 주제를 복사해 붙여넣으세요. 한 줄에 하나씩 직접 적어도 됩니다.</p>
+    <div class="links"><a href="https://creator-advisor.naver.com/" target="_blank" rel="noopener">크리에이터 어드바이저 열기</a></div>
+    <textarea id="paste" data-bind="paste" rows="4" placeholder="1  구자욱 FA 시장에 나온다…&#10;2  성시경 문가영 공식 발표…">${esc(S.paste)}</textarea>
+    <div class="row"><button class="btn" data-act="addPaste">목록에 추가</button></div>
+  </section>
+  ${S.cands.length ? `<section class="card">
+    <h2>후보 ${S.cands.length}개</h2>
+    <p class="hint">주제를 누르면 선택됩니다. 검색량이 궁금하면 검색 키워드를 복사해 데이터랩의 검색어 트렌드에 넣어 비교해 보세요. 이 페이지는 네이버에 직접 접속할 수 없어 점수를 자동으로 가져오지 못합니다.</p>
+    <div class="row">
+      <button class="btn" data-act="keywords" ${canAsk() ? '' : 'disabled'}>검색 키워드 뽑기</button>
+      <a class="btn ghost" href="https://datalab.naver.com/keyword/trendSearch.naver" target="_blank" rel="noopener">데이터랩 열기</a>
+      <button class="btn ghost danger" data-act="clearCands">모두 지우기</button>
+    </div>
+    ${S.step === 1 ? statusBox() : ''}
+    <ul class="cands">${rows}</ul>
+  </section>` : ''}
+  <section class="card">
+    <h2>주제와 자료</h2>
+    <label class="f" for="topic">주제 (직접 고쳐 써도 돼요)</label>
+    <input id="topic" type="text" data-bind="topic" value="${esc(S.topic)}" placeholder="예: 구자욱이 FA 시장에 나온다, 역대 FA 최고 금액 선수는?">
+    <label class="f" for="notes">자료: 관련 기사 본문이나 알고 있는 사실을 붙여넣으세요</label>
+    <textarea id="notes" data-bind="notes" data-count="notesCount" rows="8" placeholder="기사 본문을 통째로 붙여넣어도 됩니다. 여러 기사를 이어 붙여도 돼요.">${esc(S.notes)}</textarea>
+    <p class="count" id="notesCount">${len ? len.toLocaleString() + '자' + (len > MAX_NOTES ? ' · 앞의 ' + MAX_NOTES.toLocaleString() + '자만 사용돼요' : '') : ''}</p>
+    <div class="notice">이 페이지의 Claude는 인터넷을 검색하지 못합니다. 제목과 글은 여기 붙여넣은 자료만 근거로 쓰니, 최근 소식이라면 기사 내용을 꼭 넣어 주세요. 자료가 없으면 구체적인 숫자와 날짜는 쓰지 않습니다.</div>
+    <div class="row"><button class="btn primary" data-act="goto" data-step="2">제목 만들러 가기</button></div>
+  </section>`;
+}
+
+/* ------------------------------------------------------------------ 2단계: 제목 */
+function titlePrompt(forCopy) {
+  let p = fill(settings.titlePrompt.trim() || DEFAULT_TITLE_PROMPT, { topic: S.topic.trim(), notes: notesText() || NO_NOTES });
+  p += forCopy
+    ? '\n\n# 출력 형식\n이득형, 손해형, 위협형 순서로 유형 이름을 한 줄 쓰고 그 아래에 번호 목록으로 5개씩 적습니다. 마지막에 유형별 BEST를 한 줄씩 적습니다.'
+    : '\n\n# 출력 형식\n아래 모양의 JSON 하나만 출력합니다. 다른 말은 쓰지 않습니다.\n{"gain": ["이득형 제목 5개"], "loss": ["손해형 제목 5개"], "threat": ["위협형 제목 5개"], "best": {"gain": "이득형 BEST", "loss": "손해형 BEST", "threat": "위협형 BEST"}}';
+  return p;
+}
+const strs = a => (Array.isArray(a) ? a.map(x => String(x).trim()).filter(Boolean).slice(0, 8) : []);
+async function doTitles() {
+  if (!S.topic.trim()) { toast('먼저 주제를 정해 주세요'); return; }
+  await task('titles', '제목 15개를 만드는 중… 1분쯤 걸릴 수 있어요', async signal => {
+    const j = await sample.json(titlePrompt(false), { modelTier: settings.tier, cache: false, signal });
+    const t = { gain: strs(j && j.gain), loss: strs(j && j.loss), threat: strs(j && j.threat), best: (j && j.best) || {} };
+    if (!t.gain.length && !t.loss.length && !t.threat.length) throw { code: 'invalid_json' };
+    S.titles = t;
+    if (!S.title) S.title = String(t.best.gain || t.gain[0] || '');
+  });
+}
+const TYPES = [['gain', '이득형'], ['loss', '손해형'], ['threat', '위협형']];
+function viewTitles() {
+  const groups = S.titles ? TYPES.map(([k, name]) => `
+    <div class="tgroup ${k}"><h3><i></i>${name}</h3>
+      ${(S.titles[k] || []).map(t => `<button class="title-btn ${t === S.title ? 'sel' : ''}" data-act="pickTitle" data-t="${esc(t)}">${esc(t)}${S.titles.best && S.titles.best[k] === t ? '<span class="badge">BEST</span>' : ''}</button>`).join('')}
+    </div>`).join('') : '';
+  const manual = parsePaste(S.manualTitles).filter(t => t.length >= 8 && !/^(이득형|손해형|위협형)/.test(t));
+  return `
+  <section class="card">
+    <h2>제목 만들기</h2>
+    <p class="hint">주제: <strong>${esc(S.topic) || '아직 없음'}</strong>${S.notes.trim() ? '' : ' · 자료 없음'}</p>
+    ${claudeNotice()}
+    <div class="row">
+      <button class="btn primary" data-act="titles" ${canAsk() ? '' : 'disabled'}>${S.titles ? '제목 다시 만들기' : '제목 15개 만들기'}</button>
+      <button class="btn ghost" data-act="copyTitlePrompt">프롬프트 복사</button>
+    </div>
+    <p class="hint">이득형·손해형·위협형으로 5개씩 만들고 유형별 BEST를 표시합니다.</p>
+    ${S.step === 2 ? statusBox() : ''}
+  </section>
+  ${groups ? `<section class="card"><h2>마음에 드는 제목 고르기</h2>${groups}</section>` : ''}
+  <section class="card">
+    <h2>제목 확정</h2>
+    ${groups ? '' : `
+      <label class="f" for="mt">다른 곳에서 받은 제목 목록을 붙여넣으면 아래에서 고를 수 있어요.</label>
+      <textarea id="mt" data-bind="manualTitles" data-rerender="1" rows="3">${esc(S.manualTitles)}</textarea>
+      ${manual.map(t => `<button class="title-btn ${t === S.title ? 'sel' : ''}" data-act="pickTitle" data-t="${esc(t)}">${esc(t)}</button>`).join('')}`}
+    <label class="f" for="title">확정한 제목 (직접 고쳐 써도 돼요)</label>
+    <input id="title" type="text" data-bind="title" value="${esc(S.title)}">
+    <div class="row"><button class="btn primary" data-act="goto" data-step="3">글 쓰러 가기</button></div>
+  </section>`;
+}
+
+/* ------------------------------------------------------------------ 3단계: 글 */
+function articlePrompt() {
+  const L = LENGTHS[S.length] || LENGTHS.mid;
+  return fill(settings.articlePrompt.trim() || DEFAULT_ARTICLE_PROMPT, {
+    title: S.title.trim(), topic: S.topic.trim(), notes: notesText() || NO_NOTES, length: L.chars, sections: L.sections,
+    tone: settings.tone.trim() ? '- 블로그 성격과 말투: ' + settings.tone.trim() : '',
+  });
+}
+function parseArticle(md) {
+  const secs = [{ heading: null, paras: [] }]; let buf = [];
+  const flush = () => { if (buf.length) { secs[secs.length - 1].paras.push(buf.join('\n')); buf = []; } };
+  for (const raw of md.split('\n')) {
+    const line = raw.trim(), m = line.match(/^#{1,4}\s+(.+)$/);
+    if (m) { flush(); secs.push({ heading: m[1].replace(/\*\*/g, '').trim(), paras: [] }); }
+    else if (!line) flush(); else buf.push(line);
+  }
+  flush(); return secs;
+}
+const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+function articleHTML(md) {
+  return parseArticle(md).map(sec => (sec.heading ? `<h3>${esc(sec.heading)}</h3>` : '') + sec.paras.map(p => `<p>${inline(p)}</p>`).join('')).join('');
+}
+function countChars(md) { const t = md.replace(/^#{1,4}\s+/gm, '').replace(/\*\*/g, ''); return { all: t.replace(/\n/g, '').length, noSpace: t.replace(/\s/g, '').length }; }
+function countLine() { const c = countChars(S.article); return S.article ? `공백 포함 ${c.all.toLocaleString()}자 · 공백 제외 ${c.noSpace.toLocaleString()}자` : ''; }
+function syncSlots(reset) {
+  const secs = parseArticle(S.article);
+  if (reset) S.slots = [];
+  S.slots = secs.map((sec, i) => S.slots[i] || { query: (sec.heading || S.topic).slice(0, 40), prompt: '' });
+}
+function pushHistory() {
+  if (!S.article.trim()) return;
+  hist = hist.filter(h => h.id !== S.id);
+  hist.unshift({ id: S.id, at: Date.now(), topic: S.topic, title: S.title, article: S.article, notes: S.notes.slice(0, MAX_NOTES) });
+  hist = hist.slice(0, 20); store.set('tw.history', hist);
+}
+async function doArticle() {
+  if (!S.title.trim()) { toast('먼저 제목을 정해 주세요'); return; }
+  ui.editArticle = false;
+  await task('article', '생각하는 중… 첫 글자가 나오기까지 1분쯤 걸릴 수 있어요', async signal => {
+    const r = await sample(articlePrompt(), {
+      modelTier: settings.tier, cache: false, signal,
+      onText: ({ text }) => { const el = $('#articleOut'); if (el) el.innerHTML = articleHTML(text); setStatus('글을 쓰는 중… ' + countChars(text).all.toLocaleString() + '자'); },
+    });
+    S.article = r.text.trim(); syncSlots(true); pushHistory();
+    if (r.truncated) ui.error = '길이 제한으로 글이 중간에 끊겼어요. 다시 쓰거나 직접 마무리해 주세요.';
+  });
+}
+function viewArticle() {
+  const seg = Object.entries(LENGTHS).map(([k, v]) => `<button data-act="setLength" data-k="${k}" aria-pressed="${S.length === k}">${v.label} ${v.chars}자</button>`).join('');
+  return `
+  <section class="card">
+    <h2>글 쓰기</h2>
+    <p class="hint">제목: <strong>${esc(S.title) || '아직 없음'}</strong></p>
+    ${claudeNotice()}
+    <div class="row"><div class="seg" role="group" aria-label="글 길이">${seg}</div></div>
+    <div class="row">
+      <button class="btn primary" data-act="article" ${canAsk() ? '' : 'disabled'}>${S.article ? '다시 쓰기' : '글 쓰기'}</button>
+      <button class="btn ghost" data-act="copyArticlePrompt">프롬프트 복사</button>
+    </div>
+    ${S.step === 3 ? statusBox() : ''}
+  </section>
+  <section class="card">
+    <div class="row" style="margin-top:0;justify-content:space-between">
+      <h2 style="margin:0">본문</h2>
+      <button class="btn small ghost" data-act="toggleEdit" ${ui.busy ? 'disabled' : ''}>${ui.editArticle ? '미리보기' : '직접 수정'}</button>
+    </div>
+    ${ui.editArticle
+      ? `<p class="hint">소제목은 줄 앞에 "## ", 굵은 글씨는 **이렇게** 적습니다.</p><textarea id="articleEdit" data-bind="article" data-count="count" rows="18">${esc(S.article)}</textarea>`
+      : `<div class="article" id="articleOut">${S.article ? articleHTML(S.article) : '<p class="ph">아직 글이 없어요.</p>'}</div>`}
+    <p class="count" id="count">${countLine()}</p>
+    <div class="row"><button class="btn primary" data-act="goto" data-step="4" ${S.article ? '' : 'disabled'}>이미지와 내보내기</button></div>
+  </section>`;
+}
+
+/* ------------------------------------------------------------------ 4단계: 이미지 기획과 내보내기 */
+async function doPlan() {
+  await task('plan', '소주제별 이미지를 기획하는 중…', async signal => {
+    const secs = parseArticle(S.article);
+    const arr = await sample.json(`블로그 글의 구간마다 어울리는 이미지를 기획해 주세요. 구간은 ${secs.length}개이고, 입력과 같은 순서로 ${secs.length}개를 출력합니다.
+
+구간마다:
+- query: 네이버 이미지 검색에 넣을 한국어 검색어 2~4단어. 그 구간의 소재가 바로 나오는 구체적인 말.
+- prompt: 이미지 생성 AI에 줄 한국어 설명 한두 문장. 16:9 가로 구도의 사진 또는 일러스트. 구간의 분위기와 소재를 사물, 장소, 상황으로 표현합니다.
+
+prompt 규칙:
+- 실존 인물의 얼굴이나 이름, 특정 팀·기업의 로고와 상표는 넣지 않습니다. 인물이 필요하면 뒷모습이나 실루엣의 익명 인물로 표현합니다.
+- 이미지 안에 글자나 숫자를 넣지 않습니다.
+
+출력: {"query": string, "prompt": string} 객체 ${secs.length}개의 JSON 배열만 출력합니다.
+
+제목: ${S.title}
+
+${secs.map((s, i) => `[구간 ${i + 1}] ${s.heading || '도입부'}\n${s.paras.join(' ').slice(0, 400)}`).join('\n\n')}`, { modelTier: 'quick', signal });
+    if (!Array.isArray(arr)) throw { code: 'invalid_json' };
+    syncSlots(false);
+    S.slots.forEach((s, i) => { const p = arr[i]; if (p) { if (p.query) s.query = String(p.query).slice(0, 60); if (p.prompt) s.prompt = String(p.prompt); } });
+  });
+}
+const naverImageUrl = q => 'https://search.naver.com/search.naver?where=image&query=' + encodeURIComponent(q);
+function exportText() {
+  const lines = [];
+  parseArticle(S.article).forEach(sec => { if (sec.heading) lines.push(sec.heading, ''); for (const p of sec.paras) lines.push(p.replace(/\*\*/g, ''), ''); });
+  return lines.join('\n').trim();
+}
+function exportHTML() {
+  return parseArticle(S.article).map(sec => (sec.heading ? '<h3>' + esc(sec.heading) + '</h3><p><br></p>' : '')
+    + sec.paras.map(p => '<p>' + inline(p).replace(/\n/g, '<br>') + '</p><p><br></p>').join('')).join('');
+}
+function viewImages() {
+  if (!S.article) return '<section class="card"><h2>이미지와 내보내기</h2><p class="hint">먼저 글을 써 주세요.</p></section>';
+  syncSlots(false);
+  const secs = parseArticle(S.article);
+  const slots = S.slots.map((s, i) => `
+    <div class="slot">
+      <h3>${i + 1}. ${esc(secs[i].heading || '도입부 (대표 이미지)')}</h3>
+      <div class="two">
+        <input id="q${i}" type="text" data-bind="slots.${i}.query" data-link="ql${i}" value="${esc(s.query)}" placeholder="이미지 검색어" aria-label="이미지 검색어">
+        <a class="btn small" id="ql${i}" href="${esc(naverImageUrl(s.query))}" target="_blank" rel="noopener">네이버 검색</a>
+      </div>
+      <div class="two">
+        <textarea id="p${i}" data-bind="slots.${i}.prompt" rows="2" style="min-height:58px" placeholder="이미지 생성 AI에 줄 설명" aria-label="이미지 설명">${esc(s.prompt)}</textarea>
+        <button class="btn small" data-act="copyPrompt" data-i="${i}">설명 복사</button>
+      </div>
+    </div>`).join('');
+  return `
+  <section class="card">
+    <h2>내보내기</h2>
+    <p class="hint">${countLine()}</p>
+    <div class="row">
+      <button class="btn primary" data-act="copyTitle">제목 복사</button>
+      <button class="btn primary" data-act="copyBody">본문 복사</button>
+    </div>
+    <div class="notice">발행 전에 숫자, 날짜, 이름을 원문 기사와 한 번 더 대조해 주세요.</div>
+    <h3>${esc(S.title)}</h3>
+    <div class="article">${articleHTML(S.article)}</div>
+  </section>
+  <section class="card">
+    <h2>소주제별 이미지</h2>
+    <p class="hint">구간마다 검색어와 이미지 설명을 만들어 드려요. 검색은 네이버에서, 생성은 설명을 복사해 Gemini 같은 이미지 AI에 붙여넣으세요. 이 페이지가 이미지를 직접 가져오거나 만들지는 못합니다.</p>
+    <div class="row">
+      <button class="btn" data-act="plan" ${canAsk() ? '' : 'disabled'}>검색어와 이미지 설명 만들기</button>
+      <a class="btn ghost" href="https://gemini.google.com/app" target="_blank" rel="noopener">Gemini 열기</a>
+    </div>
+    ${S.step === 4 ? statusBox() : ''}
+    <div class="notice">검색으로 찾은 이미지는 다른 사람의 저작물입니다. 쓰기 전에 원본 페이지에서 사용 조건과 출처 표기를 확인하세요.</div>
+    ${slots}
+  </section>`;
+}
+
+/* ------------------------------------------------------------------ 설정과 기록 */
+function viewSettings() {
+  const s = settings;
+  return `
+    <p class="hint">설정과 기록은 이 브라우저에만 저장됩니다. Claude 호출은 보는 사람의 claude.ai 사용량으로 처리됩니다.</p>
+    <label class="f" for="setTier">글의 품질과 사용량</label>
+    <select id="setTier" data-set="tier">
+      <option value="default" ${s.tier === 'default' ? 'selected' : ''}>균형 (기본)</option>
+      <option value="complex" ${s.tier === 'complex' ? 'selected' : ''}>품질 우선 (더 오래 걸리고 사용량을 더 씀)</option>
+      <option value="quick" ${s.tier === 'quick' ? 'selected' : ''}>빠르게 (사용량 절약)</option>
+    </select>
+    <label class="f" for="setTone">블로그 성격과 말투 메모 (선택)</label>
+    <input id="setTone" type="text" data-set="tone" value="${esc(s.tone)}" placeholder="예: 자동차와 생활 정보를 정리하는 블로그, 담백한 말투">
+    <label class="f" for="setTP">제목 프롬프트 ({{topic}}, {{notes}} 사용)</label>
+    <textarea id="setTP" data-set="titlePrompt" rows="8">${esc(s.titlePrompt || DEFAULT_TITLE_PROMPT)}</textarea>
+    <label class="f" for="setAP">글쓰기 프롬프트 ({{title}}, {{topic}}, {{notes}}, {{length}}, {{sections}}, {{tone}} 사용)</label>
+    <textarea id="setAP" data-set="articlePrompt" rows="8">${esc(s.articlePrompt || DEFAULT_ARTICLE_PROMPT)}</textarea>
+    <div class="row"><button class="btn ghost" data-act="resetPrompts">프롬프트 기본값으로</button><button class="btn primary" data-act="closeDialog">완료</button></div>`;
+}
+function viewHistory() {
+  const top = `<div class="row" style="margin-top:12px"><button class="btn ${ui.confirmNew ? 'danger' : ''}" data-act="newSession">${ui.confirmNew ? '한 번 더 누르면 지금 작업을 비워요' : '새 글 시작'}</button></div>`;
+  if (!hist.length) return top + '<p class="hint">아직 기록이 없어요. 글을 쓰면 여기에 남습니다.</p>';
+  return top + hist.map((h, i) => `<div class="hist">
+    <button class="open" data-act="loadHistory" data-i="${i}"><strong>${esc(h.title)}</strong><small>${new Date(h.at).toLocaleString('ko-KR')} · ${esc(h.topic)}</small></button>
+    <button class="icon-btn" data-act="delHistory" data-i="${i}" aria-label="기록 삭제">✕</button></div>`).join('');
+}
+
+/* ------------------------------------------------------------------ 화면 */
+const STEPS = ['주제·자료', '제목', '글', '이미지·내보내기'];
+function render() {
+  const done = [!!S.topic, !!S.title, !!S.article, false];
+  $('#steps').innerHTML = STEPS.map((n, i) => `<button data-act="goto" data-step="${i + 1}" class="${done[i] ? 'done' : ''}" ${S.step === i + 1 ? 'aria-current="step"' : ''}>${i + 1}. ${n}</button>`).join('');
+  $('#panel').innerHTML = [viewTopic, viewTitles, viewArticle, viewImages][S.step - 1]();
+}
+function openDialog(id, html) { const d = $('#' + id); $('.db', d).innerHTML = html; if (!d.open) d.showModal(); }
+function closeDialogs() { document.querySelectorAll('dialog[open]').forEach(d => d.close()); }
+
+const actions = {
+  goto(el) { if (ui.busy) return toast('작업이 끝난 뒤에 이동해 주세요'); S.step = Number(el.dataset.step); ui.error = ''; save(); render(); scrollTo(0, 0); },
+  addPaste() { const n = addCands(parsePaste(S.paste)); if (n) { S.paste = ''; save(); render(); } toast(n ? '후보 ' + n + '개를 추가했어요' : '추가할 후보가 없어요'); },
+  keywords: doKeywords,
+  pick(el) { S.topic = S.cands[el.dataset.i].text; save(); render(); },
+  delCand(el) { S.cands.splice(el.dataset.i, 1); save(); render(); },
+  clearCands() { S.cands = []; save(); render(); },
+  copyKw(el) { const k = S.cands[el.dataset.i].kw.trim(); if (!k) return toast('검색 키워드를 먼저 적어 주세요'); copyText(k, null, '검색 키워드를'); },
+  cancel() { if (ui.abort) ui.abort.abort(); },
+  titles: doTitles,
+  pickTitle(el) { S.title = el.dataset.t; save(); render(); },
+  copyTitlePrompt() { if (!S.topic.trim()) return toast('먼저 주제를 정해 주세요'); copyText(titlePrompt(true), null, '제목 프롬프트를'); },
+  copyArticlePrompt() { if (!S.title.trim()) return toast('먼저 제목을 정해 주세요'); copyText(articlePrompt(), null, '글쓰기 프롬프트를'); },
+  setLength(el) { S.length = el.dataset.k; save(); render(); },
+  article: doArticle,
+  toggleEdit() { if (ui.editArticle && S.article.trim()) { syncSlots(false); pushHistory(); } ui.editArticle = !ui.editArticle; save(); render(); },
+  plan: doPlan,
+  copyPrompt(el) { const p = S.slots[el.dataset.i].prompt.trim(); if (!p) return toast('이미지 설명이 비어 있어요'); copyText(p + '\n\n16:9 가로 이미지로 만들어 주세요. 이미지 안에 글자는 넣지 마세요.', null, '이미지 설명을'); },
+  copyTitle() { copyText(S.title, null, '제목을'); },
+  copyBody() { copyText(exportText(), exportHTML(), '본문을'); },
+  newSession() {
+    if (!ui.confirmNew) { ui.confirmNew = true; openDialog('dlgHistory', viewHistory()); return; }
+    ui.confirmNew = false; S = newSession(); ui.error = ''; save(); closeDialogs(); render(); scrollTo(0, 0);
+  },
+  openSettings() { openDialog('dlgSettings', viewSettings()); },
+  openHistory() { ui.confirmNew = false; openDialog('dlgHistory', viewHistory()); },
+  closeDialog() { closeDialogs(); },
+  resetPrompts() { settings.titlePrompt = ''; settings.articlePrompt = ''; store.set('tw.settings', settings); openDialog('dlgSettings', viewSettings()); toast('기본 프롬프트로 되돌렸어요'); },
+  loadHistory(el) { if (ui.busy) return; const h = hist[el.dataset.i]; S = Object.assign(newSession(), { id: h.id, topic: h.topic, title: h.title, article: h.article, notes: h.notes || '', step: 3 }); syncSlots(false); save(); closeDialogs(); render(); },
+  delHistory(el) { hist.splice(el.dataset.i, 1); store.set('tw.history', hist); openDialog('dlgHistory', viewHistory()); },
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
+  const fn = actions[el.dataset.act]; if (fn) fn(el);
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset.bind) {
+    setPath(S, el.dataset.bind, el.value); save();
+    if (el.dataset.count === 'count') { const c = $('#count'); if (c) c.textContent = countLine(); }
+    if (el.dataset.count === 'notesCount') { const c = $('#notesCount'); const n = el.value.trim().length; if (c) c.textContent = n ? n.toLocaleString() + '자' + (n > MAX_NOTES ? ' · 앞의 ' + MAX_NOTES.toLocaleString() + '자만 사용돼요' : '') : ''; }
+    if (el.dataset.link) { const a = $('#' + el.dataset.link); if (a) a.href = naverImageUrl(el.value); }
+  } else if (el.dataset.set) {
+    let v = el.value;
+    if (el.dataset.set === 'titlePrompt' && v.trim() === DEFAULT_TITLE_PROMPT) v = '';
+    if (el.dataset.set === 'articlePrompt' && v.trim() === DEFAULT_ARTICLE_PROMPT) v = '';
+    settings[el.dataset.set] = v; store.set('tw.settings', settings);
+  }
+});
+document.addEventListener('change', e => { if (e.target.dataset.rerender) render(); });
+document.querySelectorAll('dialog').forEach(d => d.addEventListener('close', () => { ui.confirmNew = false; render(); }));
+
+render();
+(window.claude && window.claude.use ? window.claude.use('sample') : Promise.resolve(null))
+  .then(f => { sample = f; ui.claude = f ? 'ready' : 'absent'; }, () => { ui.claude = 'absent'; })
+  .then(() => { if (!ui.busy && !document.querySelector('dialog[open]')) { const a = document.activeElement; if (!a || !/^(INPUT|TEXTAREA)$/.test(a.tagName)) render(); else document.querySelectorAll('[data-act="titles"],[data-act="article"],[data-act="plan"],[data-act="keywords"]').forEach(b => { b.disabled = !canAsk(); }); } });
+</script>
