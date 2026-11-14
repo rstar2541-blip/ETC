@@ -250,7 +250,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
 };
 const DEFAULT_SETTINGS = {
-  anthropicKey: '', model: 'claude-opus-5-5', naverType: 'legacy', naverId: '', naverSecret: '',
+  anthropicKey: '', model: 'claude-opus-5-5', naverType: 'hub', naverId: '', naverSecret: '',
   geminiKey: '', geminiModel: 'gemini-2.5-flash-image', tone: '', titlePrompt: '', articlePrompt: '',
 };
 const newSession = () => ({
@@ -347,7 +347,7 @@ async function detectTransport() {
 }
 async function naverCall(api, { method = 'GET', query = null, body = null }) {
   if (!hasNaver()) throw new Error('네이버 API를 쓸 수 없어요. 설정에서 네이버 키를 확인해 주세요.');
-  const kind = settings.naverType === 'hub' ? 'hub' : 'legacy';
+  const kind = settings.naverType === 'legacy' ? 'legacy' : 'hub';
   const path = NAVER_API[kind][api];
   const qs = query ? '?' + new URLSearchParams(query).toString() : '';
   let status, text;
@@ -939,12 +939,12 @@ function viewSettings() {
     <p class="hint">${where}</p>
     <label class="f" for="sk3">키 종류</label>
     <select id="sk3" data-set="naverType">
-      <option value="legacy" ${s.naverType === 'legacy' ? 'selected' : ''}>네이버 개발자센터 (Client ID / Secret)</option>
-      <option value="hub" ${s.naverType === 'hub' ? 'selected' : ''}>NAVER API HUB (API Key ID / Key)</option>
+      <option value="hub" ${s.naverType === 'hub' ? 'selected' : ''}>NAVER API HUB (Client ID / Client Secret)</option>
+      <option value="legacy" ${s.naverType === 'legacy' ? 'selected' : ''}>예전 네이버 개발자센터 (Client ID / Secret)</option>
     </select>
-    <label class="f" for="sk4">Client ID 또는 API Key ID</label>
+    <label class="f" for="sk4">Client ID</label>
     <input id="sk4" type="text" data-set="naverId" value="${esc(s.naverId)}" autocomplete="off">
-    <label class="f" for="sk5">Client Secret 또는 API Key</label>
+    <label class="f" for="sk5">Client Secret</label>
     <input id="sk5" type="password" data-set="naverSecret" value="${esc(s.naverSecret)}" autocomplete="off">
     <h3>Google Gemini (이미지 생성)</h3>
     <label class="f" for="sk6">Gemini API 키</label>

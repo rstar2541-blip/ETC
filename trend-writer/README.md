@@ -18,7 +18,7 @@
 | Gemini API 키 | AI 이미지 생성 | 이미지 검색만 사용 |
 
 - **Anthropic**: [console.anthropic.com](https://console.anthropic.com/)에서 발급. 모델은 기본 Claude Opus 5.5이고 설정에서 Sonnet 5.5나 Haiku 5.5로 바꿀 수 있어요. 글 한 편에 조사·제목·글·이미지 기획 요청이 나가고, 사용량만큼 과금됩니다.
-- **네이버**: 네이버 개발자센터의 Client ID/Secret 또는 NAVER API HUB의 API Key ID/Key. 애플리케이션에 **데이터랩(검색어 트렌드)** 과 **검색** API를 추가해 주세요. 설정에서 키 종류를 고릅니다.
+- **네이버**: 네이버 클라우드 콘솔 > NAVER API HUB 앱의 Client ID / Client Secret (blog-autopost의 `.env`에 넣은 `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET`과 같은 키). 그 앱에 **검색어 트렌드**와 **검색 > 이미지** API가 모두 추가돼 있어야 합니다. 예전 네이버 개발자센터 키라면 설정에서 키 종류를 바꿉니다.
 - **Gemini**: Google AI Studio에서 발급. 이미지 모델 ID는 설정에서 바꿀 수 있어요(기본 `gemini-2.5-flash-image`).
 
 ## 실행
