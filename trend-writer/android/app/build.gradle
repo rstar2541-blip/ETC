@@ -1,0 +1,66 @@
+plugins {
+    id 'com.android.application'
+}
+
+// GitHub Actions run number becomes the version, so every new APK installs over the old one.
+def buildNumber = (System.getenv('GITHUB_RUN_NUMBER') ?: '1') as int
+// The app itself lives in ../../index.html (+ vendor/); it is copied into the APK's assets at build time.
+def webAssetsDir = new File(project.buildDir, 'generated/webAssets')
+
+android {
+    namespace 'com.trendwriter.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.trendwriter.app'
+        minSdk 29
+        targetSdk 34
+        versionCode buildNumber
+        versionName "1.0.${buildNumber}"
+    }
+
+    signingConfigs {
+        release {
+            // A private key from GitHub secrets wins; otherwise the bundled hobby key is used.
+            storeFile file(System.getenv('TW_KEYSTORE_FILE') ?: '../keystore/trend-writer.jks')
+            storePassword System.getenv('TW_KEYSTORE_PASSWORD') ?: 'trendwriter'
+            keyAlias System.getenv('TW_KEY_ALIAS') ?: 'trendwriter'
+            keyPassword System.getenv('TW_KEY_PASSWORD') ?: 'trendwriter'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += [webAssetsDir]
+        }
+    }
+
+    lint {
+        checkReleaseBuilds false
+    }
+}
+
+def copyWeb = tasks.register('copyWeb', Copy) {
+    from('../..') {
+        include 'index.html'
+        include 'vendor/**'
+    }
+    into(new File(webAssetsDir, 'www'))
+}
+preBuild.dependsOn(copyWeb)
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

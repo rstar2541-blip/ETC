@@ -1,0 +1,1054 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f4ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15171a" media="(prefers-color-scheme: dark)">
+<title>트렌드 라이터</title>
+<style>
+:root {
+  --bg: #f5f4ef; --surface: #ffffff; --surface-2: #efede6; --line: #dcd9cf;
+  --text: #1d1c19; --muted: #6a675e; --accent: #0b6b52; --accent-ink: #ffffff; --accent-soft: #e0f0ea;
+  --gain: #0b6b52; --gain-soft: #e0f0ea; --loss: #9a5b00; --loss-soft: #fbeed3; --threat: #a8322b; --threat-soft: #fbe3e0;
+  --danger: #a8322b; --radius: 14px; --shadow: 0 1px 2px rgba(0,0,0,.05), 0 6px 20px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a; --surface: #1e2125; --surface-2: #272b30; --line: #353a41;
+    --text: #ecebe6; --muted: #a09d94; --accent: #58c7a4; --accent-ink: #0c1f19; --accent-soft: #1d3a31;
+    --gain: #58c7a4; --gain-soft: #1d3a31; --loss: #e5b25a; --loss-soft: #3b2f17; --threat: #ef8a82; --threat-soft: #43211e;
+    --danger: #ef8a82; --shadow: none;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+a { color: var(--accent); }
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 16px; }
+header.top {
+  position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top);
+}
+header.top .wrap { display: flex; align-items: center; justify-content: space-between; height: 54px; }
+header.top h1 { font-size: 18px; margin: 0; letter-spacing: -0.02em; }
+header.top h1 small { font-weight: 500; color: var(--muted); font-size: 12px; margin-left: 6px; }
+nav.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 12px 0 4px; }
+nav.steps button {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 4px; font-size: 13.5px;
+  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+nav.steps button[aria-current="step"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+nav.steps button.done:not([aria-current]) { border-color: var(--accent); color: var(--accent); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 16px; margin: 14px 0; box-shadow: var(--shadow); }
+.card h2 { font-size: 17px; margin: 0 0 6px; letter-spacing: -0.02em; }
+.card h3 { font-size: 15px; margin: 16px 0 6px; }
+.hint { color: var(--muted); font-size: 13.5px; margin: 4px 0 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.links { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; margin-bottom: 8px; }
+textarea, input[type=text], input[type=password], select {
+  width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px; outline: none;
+}
+textarea { resize: vertical; min-height: 84px; line-height: 1.55; }
+textarea:focus, input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+label.f { display: block; font-size: 13.5px; color: var(--muted); margin: 12px 0 4px; }
+.btn {
+  border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 9px 14px; cursor: pointer;
+  font-weight: 600; font-size: 14.5px; min-height: 42px;
+}
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; }
+.btn.small { min-height: 34px; padding: 5px 10px; font-size: 13px; }
+.btn.danger { color: var(--danger); }
+.icon-btn { border: 0; background: transparent; cursor: pointer; padding: 8px 10px; border-radius: 8px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.icon-btn:hover { background: var(--surface-2); }
+.status { display: none; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); font-size: 14px; }
+.status.on { display: flex; }
+.status .msg { flex: 1; min-width: 0; }
+.spin { width: 16px; height: 16px; border: 2px solid var(--accent); border-right-color: transparent; border-radius: 50%; animation: sp .8s linear infinite; flex: none; }
+@keyframes sp { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } }
+.notice { border-left: 3px solid var(--loss); background: var(--loss-soft); padding: 8px 12px; border-radius: 6px; font-size: 13.5px; margin: 10px 0; }
+.notice.err { border-color: var(--danger); background: var(--threat-soft); }
+ul.cands { list-style: none; margin: 10px 0 0; padding: 0; }
+ul.cands li { display: grid; grid-template-columns: 28px 1fr auto; gap: 4px 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+ul.cands li:first-child { border-top: 0; }
+ul.cands .rank { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; text-align: center; }
+ul.cands .pick { text-align: left; background: none; border: 0; padding: 2px 0; cursor: pointer; font-weight: 600; line-height: 1.4; }
+ul.cands li.sel .pick { color: var(--accent); }
+ul.cands .kwrow { grid-column: 2 / 4; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+ul.cands .kwrow input { flex: 1 1 140px; padding: 6px 10px; font-size: 13.5px; }
+.score { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.score svg { display: block; }
+.badge { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.badge.up { background: var(--gain-soft); color: var(--gain); }
+.badge.flat { background: var(--surface-2); color: var(--muted); }
+.badge.down { background: var(--threat-soft); color: var(--threat); }
+.badge.best { background: var(--text); color: var(--bg); margin-left: 6px; }
+.tgroup { margin-top: 14px; }
+.tgroup h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.tgroup h3 i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.tgroup.gain h3 i { background: var(--gain); } .tgroup.loss h3 i { background: var(--loss); } .tgroup.threat h3 i { background: var(--threat); }
+.title-btn {
+  display: block; width: 100%; text-align: left; border: 1px solid var(--line); background: var(--bg); border-radius: 10px;
+  padding: 10px 12px; margin: 6px 0; cursor: pointer; line-height: 1.45;
+}
+.title-btn.sel { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+details { margin-top: 12px; }
+details summary { cursor: pointer; font-weight: 600; font-size: 14.5px; }
+ol.sources { margin: 8px 0 0; padding-left: 20px; font-size: 13px; }
+ol.sources li { margin: 3px 0; overflow-wrap: anywhere; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 8px 14px; cursor: pointer; font-size: 14px; }
+.seg button[aria-pressed="true"] { background: var(--text); color: var(--bg); font-weight: 700; }
+.article { margin-top: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); line-height: 1.75; overflow-wrap: anywhere; }
+.article h3 { font-size: 17px; margin: 26px 0 10px; }
+.article p { margin: 0 0 16px; white-space: pre-line; }
+.article img { display: block; width: 100%; border-radius: 10px; margin: 0 0 16px; }
+.article .ph { color: var(--muted); }
+.count { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.slot { border-top: 1px solid var(--line); padding: 14px 0; }
+.slot:first-of-type { border-top: 0; }
+.slot h3 { margin: 0 0 8px; }
+.slot .two { display: grid; gap: 8px; grid-template-columns: 1fr auto; align-items: start; margin-top: 8px; }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-top: 8px; }
+.thumbs button { border: 2px solid transparent; padding: 0; border-radius: 8px; overflow: hidden; background: var(--surface-2); cursor: pointer; aspect-ratio: 4/3; }
+.thumbs button.sel { border-color: var(--accent); }
+.thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.chosen { margin-top: 10px; }
+.chosen img { width: 100%; max-height: 320px; object-fit: contain; border-radius: 10px; background: var(--surface-2); display: block; }
+.chosen .cap { font-size: 12.5px; color: var(--muted); margin-top: 4px; overflow-wrap: anywhere; }
+dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--text); padding: 0; width: min(640px, calc(100vw - 24px)); max-height: calc(100vh - 40px); }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog .dh { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
+dialog .dh h2 { margin: 0; font-size: 17px; }
+dialog .db { padding: 4px 16px 18px; }
+dialog h3 { font-size: 15px; margin: 20px 0 2px; }
+.hist { border-top: 1px solid var(--line); padding: 10px 0; display: flex; gap: 8px; align-items: center; }
+.hist button.open { flex: 1; text-align: left; background: none; border: 0; cursor: pointer; padding: 0; }
+.hist small { color: var(--muted); display: block; }
+#toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100vw - 32px); z-index: 20; }
+#toast.on { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <h1>트렌드 라이터<small>트렌드 → 제목 → 글</small></h1>
+  <div><button class="icon-btn" data-act="openHistory">기록</button><button class="icon-btn" data-act="openSettings">설정</button></div>
+</div></header>
+<div class="wrap">
+  <nav class="steps" id="steps" aria-label="단계"></nav>
+  <main id="panel"></main>
+</div>
+
+<dialog id="dlgSettings"><div class="dh"><h2>설정</h2><button class="icon-btn" data-act="closeDialog">닫기</button></div><div class="db" id="settingsBody"></div></dialog>
+<dialog id="dlgHistory"><div class="dh"><h2>기록</h2><button class="icon-btn" data-act="closeDialog">닫기</button></div><div class="db" id="historyBody"></div></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="vendor/anthropic-sdk.js"></script>
+<script>
+'use strict';
+/* ------------------------------------------------------------------ 기본 프롬프트 */
+const DEFAULT_TITLE_PROMPT = `# 역할
+당신은 네이버 홈피드에서 스크롤을 멈추게 만드는 블로그 제목 카피라이터입니다.
+목표는 과장이나 거짓 없이 클릭률(CTR)을 높이는 것입니다.
+
+# 주제
+{{topic}}
+
+# 확인된 사실 (팩트 노트)
+{{notes}}
+
+# 만들 것
+아래 세 가지 심리 유형으로 제목을 각각 5개씩, 총 15개 만드세요.
+- 이득형: 읽으면 얻는 것(정보, 기회, 먼저 아는 즐거움)을 앞세웁니다.
+- 손해형: 모르고 지나치면 놓치는 것, 잘못 알고 있던 것을 짚습니다.
+- 위협형: 예상 밖의 반전, 통념과 다른 사실로 긴장감을 줍니다.
+그리고 유형마다 가장 클릭될 제목 1개를 BEST로 고르세요. BEST는 그 유형의 5개 중 하나여야 합니다.
+
+# 제목 규칙
+- 핵심 키워드를 제목 맨 앞에 둡니다.
+- 28~42자 안팎으로, 모바일에서 한눈에 읽히게 씁니다.
+- "이 조건", "이 숫자"처럼 따옴표로 묶은 궁금증 장치는 제목당 한 번까지만 씁니다.
+- 숫자, 금액, 순위 같은 구체적인 값은 팩트 노트에 있는 것만 씁니다.
+- 15개의 문장 구조와 끝맺음이 서로 겹치지 않게 합니다.
+- 팩트 노트에 없는 내용, 사실과 다른 내용, 본문에서 답할 수 없는 약속은 쓰지 않습니다.
+- 특정 인물을 비방하거나 확인되지 않은 의혹을 사실처럼 쓰지 않습니다.
+- 이모지와 특수문자 장식은 쓰지 않습니다.`;
+
+const DEFAULT_ARTICLE_PROMPT = `# 역할
+당신은 네이버 홈피드에 노출되는 블로그 글을 쓰는 작가입니다.
+이 글의 목적은 단순한 정보 전달이 아니라, 끝까지 읽게 만들고(체류시간) 댓글과 공감을 이끌어내는 것입니다.
+
+# 제목
+{{title}}
+
+# 주제
+{{topic}}
+
+# 확인된 사실 (팩트 노트)
+{{notes}}
+
+# 글의 흐름
+1. 도입(3~4단락): 요즘 상황, 독자가 궁금해할 지점, 제목이 던진 궁금증 순서로 씁니다. 답은 바로 주지 않습니다.
+2. 본문: 소제목 {{sections}}개. 소제목마다 궁금증 하나를 풀고, 다음 소제목이 궁금해지는 한 줄로 넘어갑니다.
+3. 제목이 약속한 답은 글 중반에 분명하게 밝힙니다.
+4. 마무리: 핵심을 두세 줄로 정리하고, 독자의 생각을 묻는 질문 하나로 끝냅니다.
+
+# 문체
+- 한 단락은 1~2줄입니다. 한 줄은 공백 포함 22자 안팎에서 자연스럽게 줄바꿈하고, 단락 사이는 한 줄 띄웁니다.
+- "~요", "~네요", "~거든요" 같은 부드러운 구어체로 씁니다. 문장 끝 마침표는 생략해도 됩니다.
+- 글쓴이의 느낌이나 생각을 소제목 구간마다 한두 문장 넣습니다.
+- 강조할 단락은 **굵게** 표시하되 소제목 구간마다 한 번까지만 씁니다.
+- 분량은 공백 포함 약 {{length}}자입니다.
+{{tone}}
+
+# 사실 규칙
+- 숫자, 날짜, 이름, 순위는 팩트 노트에 있는 것만 씁니다.
+- 팩트 노트에 없는 내용은 지어내지 않습니다. 확실하지 않으면 "~로 알려졌어요", "아직 확정된 건 아니에요"처럼 표시합니다.
+- 특정 인물에 대한 비방이나 확인되지 않은 의혹은 쓰지 않습니다.
+
+# 출력 형식
+- 제목은 다시 쓰지 않습니다.
+- 소제목은 줄 맨 앞에 "## "를 붙입니다.
+- 그 밖의 마크다운(목록, 표, 링크)과 이모지는 쓰지 않습니다.
+- 글만 출력합니다. 설명이나 머리말은 붙이지 않습니다.`;
+
+const RESEARCH_SYSTEM = `당신은 블로그 글을 쓰기 전에 사실관계를 확인하는 리서처입니다.
+웹 검색으로 주어진 주제의 최신 정보를 확인하고, 글쓴이가 바로 쓸 수 있는 팩트 노트를 한국어로 정리하세요.
+
+담을 내용:
+- 무슨 일인지 핵심 사실 (날짜 포함)
+- 숫자, 금액, 순위, 기록 같은 구체적인 값
+- 배경과 맥락, 비교할 만한 과거 사례
+- 사람들이 궁금해할 만한 지점
+- 아직 확정되지 않았거나 매체마다 다른 내용 (맨 끝에 "미확정:"으로 시작하는 항목으로 구분)
+
+형식: "- "로 시작하는 한두 문장짜리 항목 15~25개. 확인하지 못한 내용은 쓰지 않습니다. 팩트 노트만 출력하고 머리말이나 맺음말은 붙이지 않습니다.`;
+
+const NO_NOTES = '(팩트 노트 없음. 먼저 웹 검색으로 이 주제의 최신 사실을 확인한 뒤 작성하세요.)';
+const LENGTHS = { short: { label: '짧게', chars: 1200, sections: 3 }, mid: { label: '보통', chars: 1800, sections: 4 }, long: { label: '길게', chars: 2600, sections: 5 } };
+const MODELS = [
+  ['claude-opus-5-5', 'Claude Opus 5.5 (기본, 품질 우선)'],
+  ['claude-sonnet-5-5', 'Claude Sonnet 5.5 (빠르고 저렴)'],
+  ['claude-haiku-5-5', 'Claude Haiku 5.5 (가장 저렴)'],
+];
+const NAVER_API = {
+  legacy: { datalab: '/v1/datalab/search', image: '/v1/search/image' },
+  hub: { datalab: '/search-trend/v1/search', image: '/search/v1/image' },
+};
+
+/* ------------------------------------------------------------------ 상태 */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const DEFAULT_SETTINGS = {
+  anthropicKey: '', model: 'claude-opus-5-5', naverType: 'legacy', naverId: '', naverSecret: '',
+  geminiKey: '', geminiModel: 'gemini-2.5-flash-image', tone: '', titlePrompt: '', articlePrompt: '',
+};
+const newSession = () => ({
+  id: Date.now().toString(36), step: 1, paste: '', cands: [], topic: '', notes: '', sources: [],
+  titles: null, manualTitles: '', title: '', length: 'mid', article: '', slots: [], scoreNote: '',
+});
+let settings = Object.assign({}, DEFAULT_SETTINGS, store.get('tw.settings', {}));
+let S = Object.assign(newSession(), store.get('tw.session', {}));
+let hist = store.get('tw.history', []);
+const ui = { busy: null, abort: null, transport: null, editArticle: false, error: '', noFallback: false };
+const native = window.TrendWriterNative || null;
+
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const copy = Object.assign({}, S, {
+      slots: S.slots.map(s => Object.assign({}, s, { results: undefined, busy: undefined,
+        image: s.image ? Object.assign({}, s.image, s.image.kind === 'ai' ? { src: '' } : {}) : null })),
+    });
+    store.set('tw.session', copy);
+  }, 250);
+}
+
+/* 생성한 이미지는 용량이 커서 IndexedDB에 따로 보관한다. */
+const idb = {
+  p: null,
+  open() {
+    return this.p || (this.p = new Promise((res, rej) => {
+      const r = indexedDB.open('trend-writer', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('img');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+  },
+  async run(mode, fn) {
+    try {
+      const db = await this.open();
+      return await new Promise((res, rej) => { const q = fn(db.transaction('img', mode).objectStore('img')); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); });
+    } catch { return undefined; }
+  },
+  get(k) { return this.run('readonly', s => s.get(k)); },
+  set(k, v) { return this.run('readwrite', s => s.put(v, k)); },
+  clear() { return this.run('readwrite', s => s.clear()); },
+};
+
+/* ------------------------------------------------------------------ 도우미 */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+const kstDate = off => new Date(Date.now() + 9 * 3600e3 + off * 864e5).toISOString().slice(0, 10);
+const hasClaude = () => !!settings.anthropicKey.trim();
+const hasNaver = () => !!(ui.transport && settings.naverId.trim() && settings.naverSecret.trim());
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2600); }
+function fill(tpl, vars) { return tpl.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] == null ? '' : vars[k]); }
+function setPath(obj, path, val) { const ks = path.split('.'); let o = obj; for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]]; o[ks[ks.length - 1]] = val; }
+function getPath(obj, path) { return path.split('.').reduce((o, k) => (o == null ? o : o[k]), obj); }
+function openExternal(url) { if (native && native.open) native.open(url); else window.open(url, '_blank', 'noopener'); }
+
+async function copyText(text, html) {
+  if (native && native.copy) { native.copy(text, html || ''); return true; }
+  try {
+    if (html && window.ClipboardItem) {
+      await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
+    } else await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const d = document.createElement('div');
+    d.contentEditable = 'true'; d.style.cssText = 'position:fixed;left:-9999px;white-space:pre-wrap';
+    if (html) d.innerHTML = html; else d.textContent = text;
+    document.body.appendChild(d);
+    const r = document.createRange(); r.selectNodeContents(d);
+    const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    let ok = false; try { ok = document.execCommand('copy'); } catch {}
+    sel.removeAllRanges(); d.remove(); return ok;
+  }
+}
+async function copyAndToast(text, html, label) { toast((await copyText(text, html)) ? label + ' 복사했어요' : '복사하지 못했어요. 직접 선택해 복사해 주세요'); }
+
+/* ------------------------------------------------------------------ 안드로이드 브리지 */
+const nativeWaiters = {};
+let nativeSeq = 0;
+window.__twNativeCb = (id, status, body) => { const w = nativeWaiters[id]; if (w) { delete nativeWaiters[id]; w({ status, body }); } };
+function nativeCall(method, ...args) {
+  return new Promise(res => { const id = 'n' + (++nativeSeq); nativeWaiters[id] = res; native[method](id, ...args); });
+}
+
+/* ------------------------------------------------------------------ 네이버 API (브리지 또는 로컬 서버 경유) */
+async function detectTransport() {
+  if (native) { ui.transport = 'native'; return; }
+  if (!/^https?:$/.test(location.protocol)) { ui.transport = null; return; }
+  try { const r = await fetch('naver/ping', { cache: 'no-store' }); const j = await r.json(); ui.transport = j && j.ok ? 'proxy' : null; }
+  catch { ui.transport = null; }
+}
+async function naverCall(api, { method = 'GET', query = null, body = null }) {
+  if (!hasNaver()) throw new Error('네이버 API를 쓸 수 없어요. 설정에서 네이버 키를 확인해 주세요.');
+  const kind = settings.naverType === 'hub' ? 'hub' : 'legacy';
+  const path = NAVER_API[kind][api];
+  const qs = query ? '?' + new URLSearchParams(query).toString() : '';
+  let status, text;
+  if (ui.transport === 'native') {
+    const r = await nativeCall('request', JSON.stringify({ kind, method, path: path + qs, id: settings.naverId.trim(), secret: settings.naverSecret.trim(), body: body ? JSON.stringify(body) : '' }));
+    status = r.status; text = r.body;
+  } else {
+    const r = await fetch('naver/api/' + kind + path + qs, {
+      method, headers: Object.assign({ 'x-tw-id': settings.naverId.trim(), 'x-tw-secret': settings.naverSecret.trim() }, body ? { 'content-type': 'application/json' } : {}),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    status = r.status; text = await r.text();
+  }
+  let json = null; try { json = JSON.parse(text); } catch {}
+  if (status !== 200 || !json) {
+    const m = json && (json.errorMessage || (json.error && (json.error.message || json.error)) || json.message);
+    if (status === 401 || status === 403) throw new Error('네이버 키가 올바르지 않거나 이 API 사용 권한이 없어요. (' + status + (m ? ': ' + m : '') + ')');
+    if (status === 429) throw new Error('네이버 API 하루 호출 한도를 넘었어요.');
+    throw new Error('네이버 API 오류 (' + (status || '연결 실패') + ')' + (m ? ': ' + m : ''));
+  }
+  return json;
+}
+
+/* ------------------------------------------------------------------ Claude */
+let client = null, clientKey = '';
+function claude() {
+  const key = settings.anthropicKey.trim();
+  if (!client || clientKey !== key) { client = new AnthropicSDK.Anthropic({ apiKey: key, dangerouslyAllowBrowser: true }); clientKey = key; }
+  return client;
+}
+function explainError(e) {
+  const A = AnthropicSDK.Anthropic;
+  if (e instanceof A.APIUserAbortError || (e && e.name === 'AbortError')) return '취소했어요.';
+  if (e instanceof A.AuthenticationError) return 'Anthropic API 키가 올바르지 않아요. 설정에서 키를 확인해 주세요.';
+  if (e instanceof A.PermissionDeniedError) return '이 키로는 선택한 모델이나 기능을 쓸 수 없어요. (403)';
+  if (e instanceof A.RateLimitError) return '요청이 많아 잠시 제한됐어요. 1분쯤 뒤에 다시 시도해 주세요.';
+  if (e instanceof A.APIConnectionError) return '네트워크 연결을 확인해 주세요.';
+  if (e instanceof A.APIError) return 'Claude API 오류' + (e.status ? ' (' + e.status + ')' : '') + ': ' + e.message;
+  return (e && e.message) || String(e);
+}
+/* 스트리밍으로 한 번 요청하고, 웹 검색이 길어져 멈춘 턴(pause_turn)은 이어서 받는다. */
+async function runClaude(params, { onText, onStatus } = {}) {
+  const ctl = new AbortController(); ui.abort = ctl;
+  const messages = params.messages.slice();
+  let text = '', searches = 0; const blocks = [];
+  for (let turn = 0; turn < 6; turn++) {
+    const req = Object.assign({}, params, { messages });
+    // 안전 분류기가 요청을 거절하면 서버가 다른 모델로 이어 받도록 한다(Opus/Sonnet 5.5).
+    const useFallback = !ui.noFallback && /^claude-(opus|sonnet)-5-5$/.test(params.model);
+    let msg;
+    try {
+      const stream = useFallback
+        ? claude().beta.messages.stream(Object.assign({}, req, { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' }), { signal: ctl.signal })
+        : claude().messages.stream(req, { signal: ctl.signal });
+      const base = text;
+      let part = '';
+      for await (const ev of stream) {
+        if (ev.type === 'content_block_start' && ev.content_block.type === 'server_tool_use') { searches++; onStatus && onStatus('웹 검색 중… (' + searches + '번째)'); }
+        else if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta') { part += ev.delta.text; onText && onText(base + part); }
+      }
+      msg = await stream.finalMessage();
+      text = base + part;
+    } catch (e) {
+      const A = AnthropicSDK.Anthropic;
+      if (useFallback && e instanceof A.BadRequestError && /fallback|beta/i.test(e.message)) { ui.noFallback = true; turn--; continue; }
+      throw e;
+    }
+    blocks.push(...msg.content);
+    if (msg.stop_reason === 'pause_turn') { messages.push({ role: 'assistant', content: msg.content }); continue; }
+    if (msg.stop_reason === 'refusal') throw new Error('Claude가 이 요청을 거절했어요. 주제나 표현을 바꿔 다시 시도해 주세요.');
+    return { text, blocks, truncated: msg.stop_reason === 'max_tokens' };
+  }
+  throw new Error('웹 검색이 너무 길어져 중단했어요. 다시 시도해 주세요.');
+}
+const webSearchTool = uses => ({ type: 'web_search_20260209', name: 'web_search', max_uses: uses, user_location: { type: 'approximate', country: 'KR', timezone: 'Asia/Seoul' } });
+function collectSources(blocks) {
+  const out = [], seen = new Set();
+  const add = (url, title) => { if (url && /^https?:/.test(url) && !seen.has(url)) { seen.add(url); out.push({ url, title: title || url }); } };
+  for (const b of blocks) if (b.type === 'text' && Array.isArray(b.citations)) for (const c of b.citations) add(c.url, c.title);
+  for (const b of blocks) if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) for (const r of b.content) add(r.url, r.title);
+  return out.slice(0, 15);
+}
+async function claudeJSON(prompt, schema, effort, onStatus) {
+  const r = await runClaude({
+    model: settings.model, max_tokens: 8000,
+    output_config: { effort, format: { type: 'json_schema', schema } },
+    messages: [{ role: 'user', content: prompt }],
+  }, { onStatus });
+  if (r.truncated) throw new Error('응답이 중간에 끊겼어요. 다시 시도해 주세요.');
+  try { return JSON.parse(r.text); } catch { throw new Error('응답을 읽지 못했어요. 다시 시도해 주세요.'); }
+}
+const strArr = { type: 'array', items: { type: 'string' } };
+
+/* ------------------------------------------------------------------ 작업 실행 틀 */
+function setStatus(msg) { const el = $('#status'); if (!el) return; el.classList.toggle('on', !!msg); const m = $('.msg', el); if (m) m.textContent = msg || ''; }
+async function task(name, startMsg, fn) {
+  if (ui.busy) return;
+  ui.busy = name; ui.error = ''; render(); setStatus(startMsg);
+  try { await fn(); }
+  catch (e) { ui.error = explainError(e); }
+  finally { ui.busy = null; ui.abort = null; save(); render(); }
+}
+
+/* ------------------------------------------------------------------ 1단계: 후보와 데이터랩 */
+function parsePaste(text) {
+  const out = [];
+  for (let line of text.split(/\r?\n/)) {
+    line = line.replace(/^[\s\-•·*]+/, '').replace(/^\(?\d{1,2}\)?(위|[.)\]:]|\s)\s*/, '').replace(/^[①-⑳]\s*/, '').trim();
+    if (line.length < 2 || /^[\d\s.,%]+$/.test(line)) continue;
+    out.push(line.slice(0, 80));
+  }
+  return out;
+}
+function addCands(list, why) {
+  const have = new Set(S.cands.map(c => c.text));
+  let n = 0;
+  for (const item of list) {
+    const text = typeof item === 'string' ? item : item.text;
+    if (!text || have.has(text) || S.cands.length >= 40) continue;
+    have.add(text); n++;
+    S.cands.push({ text, kw: (item.kw || (text.length <= 14 ? text : '')), why: item.why || why || '', score: null });
+  }
+  return n;
+}
+async function doRecommend() {
+  await task('recommend', '오늘의 화제 주제를 찾는 중…', async () => {
+    const prompt = `오늘은 ${kstDate(0)}입니다. 지금 한국에서 화제가 되고 있어 블로그 글감으로 쓰기 좋은 주제를 웹 검색으로 찾아 15개 골라 주세요.
+${settings.tone.trim() ? '블로그 성격: ' + settings.tone.trim() + '\n' : ''}
+한 줄에 하나씩, 정확히 아래 형식으로만 출력하세요. 다른 말은 쓰지 않습니다.
+검색 키워드 | 한 줄 주제 설명 | 화제인 이유
+
+- 검색 키워드: 사람들이 네이버에 실제로 입력할 2~3단어 (예: 구자욱 FA)
+- 한 줄 주제 설명: 글의 소재가 드러나는 25자 안팎의 문장
+- 최근 며칠 사이의 일만 고르고, 확인되지 않은 소문은 제외합니다.`;
+    const r = await runClaude({
+      model: settings.model, max_tokens: 16000, output_config: { effort: 'medium' },
+      tools: [webSearchTool(6)], messages: [{ role: 'user', content: prompt }],
+    }, { onStatus: setStatus });
+    const items = [];
+    for (const line of r.text.split('\n')) {
+      const p = line.replace(/^[\s\-•*\d.)]+/, '').split('|').map(x => x.trim());
+      if (p.length >= 2 && p[0] && p[1] && p[0].length <= 30) items.push({ kw: p[0], text: p[1], why: p[2] || '' });
+    }
+    if (!items.length) throw new Error('추천 결과를 읽지 못했어요. 다시 시도해 주세요.');
+    toast('후보 ' + addCands(items) + '개를 추가했어요');
+  });
+}
+async function fillKeywords() {
+  const need = S.cands.filter(c => !c.kw.trim());
+  if (!need.length || !hasClaude()) return;
+  setStatus('검색 키워드를 뽑는 중…');
+  const j = await claudeJSON(`아래는 블로그 글감 후보(기사 제목 또는 주제)입니다. 각각에 대해 사람들이 네이버에서 실제로 검색할 핵심 검색어를 하나씩 뽑아 주세요.
+- 2~3단어, 15자 이내 (예: "구자욱 FA", "성시경 문가영")
+- 입력과 같은 순서, 같은 개수로 출력합니다.
+
+${need.map((c, i) => (i + 1) + '. ' + c.text).join('\n')}`,
+    { type: 'object', properties: { keywords: strArr }, required: ['keywords'], additionalProperties: false }, 'low');
+  need.forEach((c, i) => { if (j.keywords[i]) c.kw = String(j.keywords[i]).slice(0, 30); });
+}
+function scoreSeries(s) {
+  const n = s.length, recent = mean(s.slice(n - 3)), prev = mean(s.slice(0, n - 3));
+  return { series: s, all: mean(s), week: mean(s.slice(n - 7)), surge: prev > 0 ? recent / prev : (recent > 0 ? Infinity : 0) };
+}
+async function doScore() {
+  await task('score', '데이터랩 점수를 계산하는 중…', async () => {
+    await fillKeywords();
+    const kws = [...new Set(S.cands.map(c => c.kw.trim()).filter(Boolean))];
+    if (!kws.length) throw new Error('검색 키워드가 있는 후보가 없어요. 후보 옆 칸에 검색 키워드를 적어 주세요.');
+    const days = []; for (let d = -30; d <= -1; d++) days.push(kstDate(d));
+    const scores = {}; let pivot = null, approx = false; const todo = kws.slice(); let done = 0;
+    while (todo.length) {
+      // 한 요청에 5개까지, 값은 요청 안에서의 상댓값이라 직전까지 가장 큰 키워드를 함께 넣어 단위를 맞춘다.
+      const batch = todo.splice(0, pivot ? 4 : 5);
+      const groups = (pivot ? [pivot.kw] : []).concat(batch);
+      setStatus('데이터랩 조회 중… (' + done + '/' + kws.length + ')');
+      const res = await naverCall('datalab', { method: 'POST', body: {
+        startDate: days[0], endDate: days[days.length - 1], timeUnit: 'date',
+        keywordGroups: groups.map(k => ({ groupName: k, keywords: [k] })),
+      } });
+      const byKw = {};
+      for (const r of (res.results || [])) { const m = {}; for (const p of (r.data || [])) m[p.period] = Number(p.ratio) || 0; byKw[r.title] = days.map(d => m[d] || 0); }
+      let factor = 1;
+      if (pivot) { const pm = mean(byKw[pivot.kw] || []); if (pm > 0) factor = pivot.all / pm; else approx = true; }
+      for (const k of batch) {
+        scores[k] = scoreSeries((byKw[k] || days.map(() => 0)).map(v => v * factor));
+        if (!pivot || scores[k].all > pivot.all) pivot = { kw: k, all: scores[k].all };
+      }
+      done += batch.length;
+    }
+    const top = Math.max(...Object.values(scores).map(s => s.week), 0);
+    for (const c of S.cands) { const s = scores[c.kw.trim()]; c.score = s ? { series: s.series, surge: s.surge, vol: top > 0 ? s.week / top * 100 : 0 } : null; }
+    S.cands.sort((a, b) => {
+      if (!a.score !== !b.score) return a.score ? -1 : 1;
+      if (!a.score) return 0;
+      const sa = Math.round(Math.min(a.score.surge, 99) * 10), sb = Math.round(Math.min(b.score.surge, 99) * 10);
+      return sb - sa || b.score.vol - a.score.vol;
+    });
+    S.scoreNote = days[0] + ' ~ ' + days[days.length - 1] + ' 기준' + (approx ? ' · 검색량 차이가 너무 커서 일부 비교는 대략적인 값이에요' : '');
+  });
+}
+function sparkline(series) {
+  const w = 72, h = 22, max = Math.max(...series, 1e-9);
+  const pts = series.map((v, i) => (i / (series.length - 1) * w).toFixed(1) + ',' + (h - 2 - v / max * (h - 4)).toFixed(1)).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="최근 30일 검색 추이"><polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+function surgeBadge(x) {
+  if (x === Infinity) return '<span class="badge up">새로 급등</span>';
+  if (x >= 1.3) return `<span class="badge up">×${x.toFixed(1)} 상승</span>`;
+  if (x >= 0.8) return '<span class="badge flat">보합</span>';
+  return `<span class="badge down">×${x.toFixed(1)} 하락</span>`;
+}
+function viewTopic() {
+  const rows = S.cands.map((c, i) => `
+    <li class="${S.topic && S.topic === c.text ? 'sel' : ''}">
+      <span class="rank">${i + 1}</span>
+      <button class="pick" data-act="pick" data-i="${i}" title="이 주제로 선택">${esc(c.text)}</button>
+      <button class="icon-btn" data-act="delCand" data-i="${i}" aria-label="후보 삭제">✕</button>
+      <div class="kwrow">
+        <input type="text" data-bind="cands.${i}.kw" value="${esc(c.kw)}" placeholder="검색 키워드 (예: 구자욱 FA)" aria-label="검색 키워드">
+        ${c.score ? `<span class="score">${sparkline(c.score.series)}${surgeBadge(c.score.surge)}<span>검색량 ${Math.round(c.score.vol)}</span></span>` : ''}
+      </div>
+    </li>`).join('');
+  const naverHint = hasNaver() ? '' : `<div class="notice">${ui.transport
+    ? '설정에서 네이버 API 키를 넣으면 후보의 검색량 추이를 조회해 순위를 매겨 드려요.'
+    : '데이터랩 조회는 안드로이드 앱이나 PC의 로컬 서버(<code>node server.mjs</code>)로 열었을 때만 쓸 수 있어요. 지금은 후보에서 바로 주제를 고르면 됩니다.'}</div>`;
+  return `
+  <section class="card">
+    <h2>후보 키워드 모으기</h2>
+    <p class="hint">크리에이터 어드바이저의 메인 유입 트렌드나 데이터랩에서 본 주제를 복사해 붙여넣으세요. 한 줄에 하나씩 직접 적어도 됩니다.</p>
+    <div class="links">
+      <a href="https://creator-advisor.naver.com/" target="_blank" rel="noopener">크리에이터 어드바이저 열기</a>
+      <a href="https://datalab.naver.com/" target="_blank" rel="noopener">데이터랩 열기</a>
+    </div>
+    <textarea data-bind="paste" rows="5" placeholder="1  구자욱 FA 시장에 나온다…&#10;2  성시경 문가영 공식 발표…">${esc(S.paste)}</textarea>
+    <div class="row">
+      <button class="btn" data-act="addPaste">목록에 추가</button>
+      <button class="btn ghost" data-act="recommend" ${hasClaude() ? '' : 'disabled'}>AI 추천 받기</button>
+    </div>
+    ${hasClaude() ? '' : '<p class="hint">AI 추천은 설정에 Anthropic API 키를 넣으면 쓸 수 있어요.</p>'}
+  </section>
+  <section class="card">
+    <h2>후보 ${S.cands.length}개</h2>
+    <p class="hint">주제를 누르면 선택됩니다. 데이터랩 점수는 각 후보의 검색 키워드로 최근 30일 검색 추이를 조회해, 최근 3일이 그 전보다 얼마나 올랐는지로 순서를 매깁니다.</p>
+    ${naverHint}
+    <div class="row">
+      <button class="btn primary" data-act="score" ${hasNaver() && S.cands.length ? '' : 'disabled'}>데이터랩으로 점수 매기기</button>
+      <button class="btn ghost danger" data-act="clearCands" ${S.cands.length ? '' : 'disabled'}>모두 지우기</button>
+    </div>
+    ${statusBox()}
+    ${S.scoreNote ? `<p class="hint">${esc(S.scoreNote)}. 검색량은 후보 중 최근 7일 검색이 가장 많은 키워드를 100으로 본 값이에요.</p>` : ''}
+    ${rows ? `<ul class="cands">${rows}</ul>` : '<p class="hint">아직 후보가 없어요.</p>'}
+  </section>
+  <section class="card">
+    <h2>주제 확정</h2>
+    <label class="f" for="topic">이 주제로 제목을 만듭니다. 직접 고쳐 써도 돼요.</label>
+    <input id="topic" type="text" data-bind="topic" value="${esc(S.topic)}" placeholder="예: 구자욱이 FA 시장에 나온다, 역대 FA 최고 금액 선수는?">
+    <div class="row"><button class="btn primary" data-act="goto" data-step="2">제목 만들러 가기</button></div>
+  </section>`;
+}
+function statusBox() {
+  return `${ui.error ? `<div class="notice err" role="alert">${esc(ui.error)}</div>` : ''}
+  <div class="status ${ui.busy ? 'on' : ''}" id="status"><span class="spin"></span><span class="msg"></span><button class="btn small ghost" data-act="cancel">취소</button></div>`;
+}
+
+/* ------------------------------------------------------------------ 2단계: 조사와 제목 */
+function titlePrompt(forCopy) {
+  let p = fill(settings.titlePrompt.trim() || DEFAULT_TITLE_PROMPT, { topic: S.topic.trim(), notes: S.notes.trim() || NO_NOTES });
+  if (forCopy) p += '\n\n# 출력 형식\n이득형, 손해형, 위협형 순서로 유형 이름을 한 줄 쓰고 그 아래에 번호 목록으로 5개씩 적습니다. 마지막에 유형별 BEST를 한 줄씩 적습니다.';
+  return p;
+}
+async function doTitles(withResearch) {
+  if (!S.topic.trim()) { toast('먼저 주제를 정해 주세요'); return; }
+  await task('titles', '자료를 조사하는 중…', async () => {
+    if (withResearch || !S.notes.trim()) {
+      const r = await runClaude({
+        model: settings.model, max_tokens: 16000, system: RESEARCH_SYSTEM, output_config: { effort: 'medium' },
+        tools: [webSearchTool(6)],
+        messages: [{ role: 'user', content: `오늘 날짜: ${kstDate(0)}\n주제: ${S.topic.trim()}` }],
+      }, { onStatus: setStatus, onText: () => setStatus('팩트 노트를 정리하는 중…') });
+      S.notes = r.text.trim(); S.sources = collectSources(r.blocks);
+      if (!S.notes) throw new Error('자료 조사 결과가 비어 있어요. 다시 시도해 주세요.');
+      save();
+    }
+    setStatus('제목 15개를 만드는 중…');
+    const j = await claudeJSON(titlePrompt(false), {
+      type: 'object',
+      properties: { gain: strArr, loss: strArr, threat: strArr,
+        best: { type: 'object', properties: { gain: { type: 'string' }, loss: { type: 'string' }, threat: { type: 'string' } }, required: ['gain', 'loss', 'threat'], additionalProperties: false } },
+      required: ['gain', 'loss', 'threat', 'best'], additionalProperties: false,
+    }, 'medium');
+    S.titles = j;
+    if (!S.title) S.title = j.best.gain || '';
+  });
+}
+const TYPES = [['gain', '이득형'], ['loss', '손해형'], ['threat', '위협형']];
+function viewTitles() {
+  const groups = S.titles ? TYPES.map(([k, name]) => `
+    <div class="tgroup ${k}"><h3><i></i>${name}</h3>
+      ${(S.titles[k] || []).map(t => `<button class="title-btn ${t === S.title ? 'sel' : ''}" data-act="pickTitle" data-t="${esc(t)}">${esc(t)}${S.titles.best && S.titles.best[k] === t ? '<span class="badge best">BEST</span>' : ''}</button>`).join('')}
+    </div>`).join('') : '';
+  const manual = parsePaste(S.manualTitles).filter(t => t.length >= 8 && !/^(이득형|손해형|위협형)/.test(t));
+  return `
+  <section class="card">
+    <h2>제목 만들기</h2>
+    <p class="hint">주제: <strong>${esc(S.topic) || '아직 없음'}</strong></p>
+    ${hasClaude() ? `
+      <div class="row">
+        <button class="btn primary" data-act="titles" data-research="1">${S.titles ? '조사부터 다시 하기' : '자료 조사하고 제목 만들기'}</button>
+        ${S.notes ? '<button class="btn" data-act="titles">제목만 다시 만들기</button>' : ''}
+      </div>
+      <p class="hint">웹 검색으로 사실을 먼저 확인한 뒤, 이득형·손해형·위협형 제목을 5개씩 만듭니다.</p>` : `
+      <div class="notice">Anthropic API 키가 없어서 수동 모드예요. 프롬프트를 복사해 Claude에 붙여넣고, 받은 제목을 아래에 붙여넣으세요.</div>`}
+    <div class="row">
+      <button class="btn ghost" data-act="copyTitlePrompt">제목 프롬프트 복사</button>
+      <button class="btn ghost" data-act="openClaude">Claude 열기</button>
+    </div>
+    ${statusBox()}
+    ${S.notes || !hasClaude() ? `
+    <details ${hasClaude() ? '' : 'open'}>
+      <summary>팩트 노트 ${S.sources.length ? '· 출처 ' + S.sources.length + '곳' : ''}</summary>
+      <p class="hint">제목과 글은 이 내용만 근거로 씁니다. 틀린 내용은 지우거나 고쳐 주세요.</p>
+      <textarea data-bind="notes" rows="9" placeholder="확인한 사실을 직접 적어도 됩니다.">${esc(S.notes)}</textarea>
+      ${sourcesList()}
+    </details>` : ''}
+  </section>
+  ${groups ? `<section class="card"><h2>마음에 드는 제목 고르기</h2>${groups}</section>` : ''}
+  <section class="card">
+    <h2>${groups ? '제목 확정' : '제목 붙여넣기'}</h2>
+    ${hasClaude() && groups ? '' : `
+      <label class="f" for="mt">Claude에서 받은 제목 목록을 붙여넣으면 아래에서 고를 수 있어요.</label>
+      <textarea id="mt" data-bind="manualTitles" data-rerender="1" rows="4">${esc(S.manualTitles)}</textarea>
+      ${manual.map(t => `<button class="title-btn ${t === S.title ? 'sel' : ''}" data-act="pickTitle" data-t="${esc(t)}">${esc(t)}</button>`).join('')}`}
+    <label class="f" for="title">확정한 제목 (직접 고쳐 써도 돼요)</label>
+    <input id="title" type="text" data-bind="title" value="${esc(S.title)}">
+    <div class="row"><button class="btn primary" data-act="goto" data-step="3">글 쓰러 가기</button></div>
+  </section>`;
+}
+function sourcesList() {
+  return S.sources.length ? `<ol class="sources">${S.sources.map(s => `<li><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title)}</a></li>`).join('')}</ol>` : '';
+}
+
+/* ------------------------------------------------------------------ 3단계: 글 */
+function articlePrompt() {
+  const L = LENGTHS[S.length] || LENGTHS.mid;
+  return fill(settings.articlePrompt.trim() || DEFAULT_ARTICLE_PROMPT, {
+    title: S.title.trim(), topic: S.topic.trim(), notes: S.notes.trim() || NO_NOTES, length: L.chars, sections: L.sections,
+    tone: settings.tone.trim() ? '- 블로그 성격과 말투: ' + settings.tone.trim() : '',
+  });
+}
+function parseArticle(md) {
+  const secs = [{ heading: null, paras: [] }]; let buf = [];
+  const flush = () => { if (buf.length) { secs[secs.length - 1].paras.push(buf.join('\n')); buf = []; } };
+  for (const raw of md.split('\n')) {
+    const line = raw.trim(), m = line.match(/^#{1,4}\s+(.+)$/);
+    if (m) { flush(); secs.push({ heading: m[1].replace(/\*\*/g, '').trim(), paras: [] }); }
+    else if (!line) flush(); else buf.push(line);
+  }
+  flush(); return secs;
+}
+const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+function articleHTML(md, withImages) {
+  return parseArticle(md).map((sec, i) => {
+    const slot = withImages && S.slots[i] && S.slots[i].image;
+    const img = slot ? (slot.src ? `<img src="${esc(slot.src)}" alt="${esc(sec.heading || S.title)}" referrerpolicy="no-referrer">` : '<p class="ph">(이미지 ' + (i + 1) + ' 자리)</p>') : '';
+    const paras = sec.paras.map(p => `<p>${inline(p)}</p>`).join('');
+    // 도입부는 문단 뒤에, 소제목 구간은 소제목 바로 아래에 이미지를 둔다.
+    return sec.heading ? `<h3>${esc(sec.heading)}</h3>${img}${paras}` : paras + img;
+  }).join('');
+}
+function countChars(md) { const t = md.replace(/^#{1,4}\s+/gm, '').replace(/\*\*/g, ''); return { all: t.replace(/\n/g, '').length, noSpace: t.replace(/\s/g, '').length }; }
+function countLine() { const c = countChars(S.article); return S.article ? `공백 포함 ${c.all.toLocaleString()}자 · 공백 제외 ${c.noSpace.toLocaleString()}자` : ''; }
+function syncSlots(reset) {
+  const secs = parseArticle(S.article);
+  if (reset) { S.slots = []; idb.clear(); }
+  S.slots = secs.map((sec, i) => S.slots[i] || { query: (sec.heading || S.topic).slice(0, 40), prompt: '', image: null });
+}
+function pushHistory() {
+  hist = hist.filter(h => h.id !== S.id);
+  hist.unshift({ id: S.id, at: Date.now(), topic: S.topic, title: S.title, article: S.article, notes: S.notes, sources: S.sources });
+  hist = hist.slice(0, 30); store.set('tw.history', hist);
+}
+async function doArticle() {
+  if (!S.title.trim()) { toast('먼저 제목을 정해 주세요'); return; }
+  ui.editArticle = false;
+  await task('article', '글을 쓰는 중…', async () => {
+    const out = () => $('#articleOut');
+    const r = await runClaude({
+      model: settings.model, max_tokens: 32000, output_config: { effort: 'high' },
+      messages: [{ role: 'user', content: articlePrompt() }],
+    }, { onText: t => { const el = out(); if (el) el.innerHTML = articleHTML(t, false); setStatus('글을 쓰는 중… ' + countChars(t).all.toLocaleString() + '자'); } });
+    if (!r.text.trim()) throw new Error('글이 비어 있어요. 다시 시도해 주세요.');
+    S.article = r.text.trim(); syncSlots(true); pushHistory();
+    if (r.truncated) ui.error = '길이 제한으로 글이 중간에 끊겼어요. 다시 쓰거나 이어서 직접 마무리해 주세요.';
+  });
+}
+function viewArticle() {
+  const seg = Object.entries(LENGTHS).map(([k, v]) => `<button data-act="setLength" data-k="${k}" aria-pressed="${S.length === k}">${v.label} <small>${v.chars}자</small></button>`).join('');
+  return `
+  <section class="card">
+    <h2>글 쓰기</h2>
+    <p class="hint">제목: <strong>${esc(S.title) || '아직 없음'}</strong></p>
+    <div class="row"><div class="seg" role="group" aria-label="글 길이">${seg}</div></div>
+    ${hasClaude() ? `<div class="row"><button class="btn primary" data-act="article">${S.article ? '다시 쓰기' : '글 쓰기'}</button></div>`
+      : '<div class="notice">수동 모드예요. 프롬프트를 복사해 Claude에 붙여넣고, 받은 글을 아래 "직접 수정"에 붙여넣으세요.</div>'}
+    <div class="row">
+      <button class="btn ghost" data-act="copyArticlePrompt">글쓰기 프롬프트 복사</button>
+      <button class="btn ghost" data-act="openClaude">Claude 열기</button>
+    </div>
+    ${statusBox()}
+  </section>
+  <section class="card">
+    <div class="row" style="margin-top:0;justify-content:space-between">
+      <h2 style="margin:0">본문</h2>
+      <button class="btn small ghost" data-act="toggleEdit">${ui.editArticle ? '미리보기' : '직접 수정'}</button>
+    </div>
+    ${ui.editArticle
+      ? `<p class="hint">소제목은 줄 앞에 "## ", 굵은 글씨는 **이렇게** 적습니다.</p><textarea data-bind="article" data-article="1" rows="18">${esc(S.article)}</textarea>`
+      : `<div class="article" id="articleOut">${S.article ? articleHTML(S.article, false) : '<p class="ph">아직 글이 없어요.</p>'}</div>`}
+    <p class="count" id="count">${countLine()}</p>
+    <div class="row"><button class="btn primary" data-act="goto" data-step="4" ${S.article ? '' : 'disabled'}>이미지 넣고 내보내기</button></div>
+  </section>`;
+}
+
+/* ------------------------------------------------------------------ 4단계: 이미지와 내보내기 */
+async function doPlan() {
+  await task('plan', '소주제별 이미지를 기획하는 중…', async () => {
+    const secs = parseArticle(S.article);
+    const j = await claudeJSON(`블로그 글의 구간마다 어울리는 이미지를 기획해 주세요. 구간은 ${secs.length}개이고, 입력과 같은 순서로 ${secs.length}개를 출력합니다.
+
+구간마다:
+- query: 네이버 이미지 검색에 넣을 한국어 검색어 2~4단어. 그 구간의 소재가 바로 나오는 구체적인 말.
+- prompt: 이미지 생성 모델에 줄 영어 프롬프트 한두 문장. 16:9 가로 구도의 사진 또는 일러스트. 구간의 분위기와 소재를 사물, 장소, 상황으로 표현합니다.
+
+prompt 규칙:
+- 실존 인물의 얼굴이나 이름, 특정 팀·기업의 로고와 상표는 넣지 않습니다. 인물이 필요하면 뒷모습이나 실루엣의 익명 인물로 표현합니다.
+- 이미지 안에 글자나 숫자를 넣지 않습니다.
+
+제목: ${S.title}
+
+${secs.map((s, i) => `[구간 ${i + 1}] ${s.heading || '도입부'}\n${s.paras.join(' ').slice(0, 400)}`).join('\n\n')}`,
+    { type: 'object', properties: { images: { type: 'array', items: { type: 'object', properties: { query: { type: 'string' }, prompt: { type: 'string' } }, required: ['query', 'prompt'], additionalProperties: false } } }, required: ['images'], additionalProperties: false }, 'low');
+    syncSlots(false);
+    S.slots.forEach((s, i) => { const p = j.images[i]; if (p) { s.query = p.query; s.prompt = p.prompt; } });
+  });
+}
+async function slotTask(i, fn) {
+  const s = S.slots[i]; if (!s || s.busy) return;
+  s.busy = true; s.error = ''; render();
+  try { await fn(s); } catch (e) { s.error = explainError(e); }
+  s.busy = false; save(); render();
+}
+function doImageSearch(i) {
+  return slotTask(i, async s => {
+    if (!s.query.trim()) throw new Error('검색어를 적어 주세요.');
+    const j = await naverCall('image', { query: { query: s.query.trim(), display: 12, start: 1, sort: 'sim', filter: 'large' } });
+    s.results = (j.items || []).map(it => ({ thumb: it.thumbnail, link: it.link, title: String(it.title || '').replace(/<[^>]+>/g, '') }));
+    if (!s.results.length) throw new Error('검색 결과가 없어요. 검색어를 바꿔 보세요.');
+  });
+}
+function doImageGen(i) {
+  return slotTask(i, async s => {
+    if (!settings.geminiKey.trim()) throw new Error('설정에 Gemini API 키를 넣어 주세요.');
+    if (!s.prompt.trim()) throw new Error('이미지 설명(프롬프트)을 적어 주세요.');
+    let r, j;
+    try {
+      r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(settings.geminiModel.trim()) + ':generateContent', {
+        method: 'POST', headers: { 'x-goog-api-key': settings.geminiKey.trim(), 'content-type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: s.prompt.trim() }] }], generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '16:9' } } }),
+      });
+      j = await r.json();
+    } catch { throw new Error('Gemini에 연결하지 못했어요. 네트워크를 확인해 주세요.'); }
+    if (!r.ok) throw new Error('Gemini 오류 (' + r.status + '): ' + ((j.error && j.error.message) || '알 수 없는 오류'));
+    const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
+    const p = parts.map(x => x.inlineData || x.inline_data).find(Boolean);
+    if (!p || !p.data) throw new Error('이미지가 만들어지지 않았어요. 설명을 바꿔 다시 시도해 주세요.');
+    const src = 'data:' + (p.mimeType || p.mime_type || 'image/png') + ';base64,' + p.data;
+    s.image = { kind: 'ai', src, credit: 'AI 생성 이미지' };
+    await idb.set('slot' + i, src);
+  });
+}
+function fileName(i, src) {
+  // 파일 이름은 영문과 숫자만 쓴다(일부 환경에서 한글 이름이 무시된다). 번호는 본문의 "(이미지 N)"과 같다.
+  const ext = (/^data:image\/(\w+)/.exec(src) || [])[1] || (/\.(png|jpe?g|webp|gif)(\?|$)/i.exec(src) || [])[1] || 'jpg';
+  return 'image-' + String(i + 1).padStart(2, '0') + '.' + ext.toLowerCase().replace('jpeg', 'jpg');
+}
+// 돌려주는 값: 'saved'(저장함), 'opened'(직접 받을 수 없어 원본을 열어 줌), false(실패)
+async function saveSlotImage(i) {
+  const img = S.slots[i] && S.slots[i].image; if (!img || !img.src) return false;
+  const ai = img.kind === 'ai', src = ai ? img.src : img.link, name = fileName(i, src);
+  const openOriginal = () => { openExternal(src); return 'opened'; };
+  if (native) {
+    const r = ai
+      ? await nativeCall('saveImage', src.slice(src.indexOf(',') + 1), (/^data:([^;]+)/.exec(src) || [])[1] || 'image/png', name)
+      : await nativeCall('saveImageUrl', src, name);
+    return r.status === 200 ? 'saved' : (ai ? false : openOriginal());
+  }
+  let href = src;
+  if (!ai) {
+    if (ui.transport !== 'proxy') return openOriginal();
+    try { const r = await fetch('naver/image?url=' + encodeURIComponent(src)); if (!r.ok) throw 0; href = URL.createObjectURL(await r.blob()); }
+    catch { return openOriginal(); }
+  }
+  const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  return 'saved';
+}
+function exportText() {
+  const secs = parseArticle(S.article), lines = [];
+  const mark = i => (S.slots[i] && S.slots[i].image ? '(이미지 ' + (i + 1) + ')' : '');
+  secs.forEach((sec, i) => {
+    if (sec.heading) { lines.push(sec.heading, ''); if (mark(i)) lines.push(mark(i), ''); }
+    for (const p of sec.paras) lines.push(p.replace(/\*\*/g, ''), '');
+    if (!sec.heading && mark(i)) lines.push(mark(i), '');
+  });
+  return lines.join('\n').trim();
+}
+function exportHTML() {
+  const mark = i => (S.slots[i] && S.slots[i].image ? '<p>(이미지 ' + (i + 1) + ')</p><p><br></p>' : '');
+  return parseArticle(S.article).map((sec, i) => {
+    const paras = sec.paras.map(p => '<p>' + inline(p).replace(/\n/g, '<br>') + '</p><p><br></p>').join('');
+    return sec.heading ? '<h3>' + esc(sec.heading) + '</h3><p><br></p>' + mark(i) + paras : paras + mark(i);
+  }).join('');
+}
+function viewImages() {
+  if (!S.article) return '<section class="card"><h2>이미지와 내보내기</h2><p class="hint">먼저 글을 써 주세요.</p></section>';
+  syncSlots(false);
+  const secs = parseArticle(S.article);
+  const slots = S.slots.map((s, i) => `
+    <div class="slot">
+      <h3>${i + 1}. ${esc(secs[i].heading || '도입부 (대표 이미지)')}</h3>
+      <div class="two">
+        <input type="text" data-bind="slots.${i}.query" value="${esc(s.query)}" placeholder="이미지 검색어" aria-label="이미지 검색어">
+        <button class="btn small" data-act="imgSearch" data-i="${i}" ${hasNaver() && !s.busy ? '' : 'disabled'}>네이버 검색</button>
+      </div>
+      <div class="two">
+        <textarea data-bind="slots.${i}.prompt" rows="2" style="min-height:58px" placeholder="AI에게 줄 이미지 설명 (영어 권장)" aria-label="이미지 생성 프롬프트">${esc(s.prompt)}</textarea>
+        <button class="btn small" data-act="imgGen" data-i="${i}" ${settings.geminiKey.trim() && !s.busy ? '' : 'disabled'}>AI 생성</button>
+      </div>
+      ${s.busy ? '<div class="status on"><span class="spin"></span><span class="msg">이미지를 준비하는 중…</span></div>' : ''}
+      ${s.error ? `<div class="notice err" role="alert">${esc(s.error)}</div>` : ''}
+      ${s.results && s.results.length ? `<div class="thumbs">${s.results.map((r, k) => `<button data-act="pickImg" data-i="${i}" data-k="${k}" class="${s.image && s.image.link === r.link ? 'sel' : ''}" title="${esc(r.title)}"><img src="${esc(r.thumb)}" alt="${esc(r.title)}" loading="lazy" referrerpolicy="no-referrer"></button>`).join('')}</div>` : ''}
+      ${s.image ? `<div class="chosen">
+        ${s.image.src ? `<img src="${esc(s.image.src)}" alt="" referrerpolicy="no-referrer">` : '<p class="hint">이미지 파일을 찾지 못했어요. 다시 만들어 주세요.</p>'}
+        <div class="cap">${s.image.kind === 'ai' ? 'AI 생성 이미지' : `네이버 검색 · <a href="${esc(s.image.link)}" target="_blank" rel="noopener">원본 열기</a> · ${esc(s.image.credit || '')}`}</div>
+        <div class="row"><button class="btn small" data-act="saveImg" data-i="${i}">저장</button><button class="btn small ghost danger" data-act="dropImg" data-i="${i}">빼기</button></div>
+      </div>` : ''}
+    </div>`).join('');
+  const chosen = S.slots.filter(s => s.image).length;
+  return `
+  <section class="card">
+    <h2>소주제별 이미지</h2>
+    <p class="hint">구간마다 네이버 이미지 검색으로 고르거나 AI로 새로 만들 수 있어요.</p>
+    ${hasNaver() ? '' : '<div class="notice">네이버 이미지 검색은 네이버 API 키와 앱 또는 로컬 서버가 필요해요.</div>'}
+    ${settings.geminiKey.trim() ? '' : '<div class="notice">AI 이미지 생성은 설정에 Gemini API 키를 넣으면 쓸 수 있어요.</div>'}
+    <div class="notice">네이버 검색으로 찾은 이미지는 다른 사람의 저작물입니다. 블로그에 쓰기 전에 원본 페이지에서 사용 조건과 출처 표기를 꼭 확인하세요.</div>
+    <div class="row"><button class="btn" data-act="plan" ${hasClaude() ? '' : 'disabled'}>검색어와 이미지 설명 자동으로 채우기</button></div>
+    ${statusBox()}
+    ${slots}
+  </section>
+  <section class="card">
+    <h2>내보내기</h2>
+    <p class="hint">${countLine()} · 이미지 ${chosen}장</p>
+    <div class="row">
+      <button class="btn primary" data-act="copyTitle">제목 복사</button>
+      <button class="btn primary" data-act="copyBody">본문 복사</button>
+      <button class="btn" data-act="saveAll" ${chosen ? '' : 'disabled'}>이미지 모두 저장</button>
+      <button class="btn ghost" data-act="newSession">새 글 시작</button>
+    </div>
+    <p class="hint">본문에는 이미지가 들어갈 자리가 "(이미지 1)"처럼 표시됩니다. 저장한 이미지를 블로그 편집기에서 그 자리에 올려 주세요.</p>
+    <div class="notice">발행 전에 숫자, 날짜, 이름을 출처와 한 번 더 대조해 주세요.</div>
+    <h3>${esc(S.title)}</h3>
+    <div class="article">${articleHTML(S.article, true)}</div>
+    ${S.sources.length ? '<h3>참고한 출처</h3>' + sourcesList() : ''}
+  </section>`;
+}
+
+/* ------------------------------------------------------------------ 설정과 기록 */
+function viewSettings() {
+  const s = settings;
+  const where = ui.transport === 'native' ? '안드로이드 앱에서 실행 중이라 네이버 API를 쓸 수 있어요.' : ui.transport === 'proxy' ? '로컬 서버로 실행 중이라 네이버 API를 쓸 수 있어요.' : '지금 방식으로는 네이버 API를 부를 수 없어요. 안드로이드 앱을 쓰거나 PC에서 node server.mjs 로 실행해 주세요.';
+  return `
+    <p class="hint">키는 이 기기에만 저장되고, 각 서비스(Anthropic, 네이버, Google)로만 전송됩니다.</p>
+    <h3>Claude (제목·글 생성)</h3>
+    <label class="f" for="sk1">Anthropic API 키</label>
+    <input id="sk1" type="password" data-set="anthropicKey" value="${esc(s.anthropicKey)}" placeholder="sk-ant-…" autocomplete="off">
+    <label class="f" for="sk2">모델</label>
+    <select id="sk2" data-set="model">${MODELS.map(([id, n]) => `<option value="${id}" ${s.model === id ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <p class="hint">키가 없으면 프롬프트를 복사해 claude.ai에 붙여넣는 수동 모드로 동작합니다.</p>
+    <h3>네이버 (데이터랩·이미지 검색)</h3>
+    <p class="hint">${where}</p>
+    <label class="f" for="sk3">키 종류</label>
+    <select id="sk3" data-set="naverType">
+      <option value="legacy" ${s.naverType === 'legacy' ? 'selected' : ''}>네이버 개발자센터 (Client ID / Secret)</option>
+      <option value="hub" ${s.naverType === 'hub' ? 'selected' : ''}>NAVER API HUB (API Key ID / Key)</option>
+    </select>
+    <label class="f" for="sk4">Client ID 또는 API Key ID</label>
+    <input id="sk4" type="text" data-set="naverId" value="${esc(s.naverId)}" autocomplete="off">
+    <label class="f" for="sk5">Client Secret 또는 API Key</label>
+    <input id="sk5" type="password" data-set="naverSecret" value="${esc(s.naverSecret)}" autocomplete="off">
+    <h3>Google Gemini (이미지 생성)</h3>
+    <label class="f" for="sk6">Gemini API 키</label>
+    <input id="sk6" type="password" data-set="geminiKey" value="${esc(s.geminiKey)}" autocomplete="off">
+    <label class="f" for="sk7">이미지 모델 ID</label>
+    <input id="sk7" type="text" data-set="geminiModel" value="${esc(s.geminiModel)}">
+    <h3>글 스타일</h3>
+    <label class="f" for="sk8">블로그 성격과 말투 메모 (선택)</label>
+    <input id="sk8" type="text" data-set="tone" value="${esc(s.tone)}" placeholder="예: 30대 직장인이 쓰는 스포츠·연예 이슈 블로그, 담백한 말투">
+    <label class="f" for="sk9">제목 프롬프트 ({{topic}}, {{notes}} 사용)</label>
+    <textarea id="sk9" data-set="titlePrompt" rows="8">${esc(s.titlePrompt || DEFAULT_TITLE_PROMPT)}</textarea>
+    <label class="f" for="sk10">글쓰기 프롬프트 ({{title}}, {{topic}}, {{notes}}, {{length}}, {{sections}}, {{tone}} 사용)</label>
+    <textarea id="sk10" data-set="articlePrompt" rows="8">${esc(s.articlePrompt || DEFAULT_ARTICLE_PROMPT)}</textarea>
+    <div class="row"><button class="btn ghost" data-act="resetPrompts">프롬프트 기본값으로</button><button class="btn primary" data-act="closeDialog">완료</button></div>`;
+}
+function viewHistory() {
+  if (!hist.length) return '<p class="hint">아직 기록이 없어요. 글을 쓰면 여기에 남습니다.</p>';
+  return hist.map((h, i) => `<div class="hist">
+    <button class="open" data-act="loadHistory" data-i="${i}"><strong>${esc(h.title)}</strong><small>${new Date(h.at).toLocaleString('ko-KR')} · ${esc(h.topic)}</small></button>
+    <button class="icon-btn" data-act="delHistory" data-i="${i}" aria-label="기록 삭제">✕</button></div>`).join('');
+}
+
+/* ------------------------------------------------------------------ 화면 */
+const STEPS = ['주제', '제목', '글', '이미지·내보내기'];
+function render() {
+  const done = [!!S.topic, !!S.title, !!S.article, false];
+  $('#steps').innerHTML = STEPS.map((n, i) => `<button data-act="goto" data-step="${i + 1}" class="${done[i] ? 'done' : ''}" ${S.step === i + 1 ? 'aria-current="step"' : ''}>${i + 1}. ${n}</button>`).join('');
+  $('#panel').innerHTML = [viewTopic, viewTitles, viewArticle, viewImages][S.step - 1]();
+}
+function openDialog(id, html) { const d = $('#' + id); $('.db', d).innerHTML = html; if (!d.open) d.showModal(); }
+function closeDialogs() { let any = false; document.querySelectorAll('dialog[open]').forEach(d => { d.close(); any = true; }); return any; }
+
+const actions = {
+  goto(el) { S.step = Number(el.dataset.step); ui.error = ''; save(); render(); scrollTo(0, 0); },
+  addPaste() { const n = addCands(parsePaste(S.paste)); if (n) { S.paste = ''; save(); render(); } toast(n ? '후보 ' + n + '개를 추가했어요' : '추가할 후보가 없어요'); },
+  recommend: doRecommend,
+  score: doScore,
+  pick(el) { S.topic = S.cands[el.dataset.i].text; save(); render(); },
+  delCand(el) { S.cands.splice(el.dataset.i, 1); save(); render(); },
+  clearCands() { S.cands = []; S.scoreNote = ''; save(); render(); },
+  cancel() { if (ui.abort) ui.abort.abort(); },
+  titles(el) { doTitles(!!el.dataset.research); },
+  pickTitle(el) { S.title = el.dataset.t; save(); render(); },
+  copyTitlePrompt() { if (!S.topic.trim()) return toast('먼저 주제를 정해 주세요'); copyAndToast(titlePrompt(true), null, '제목 프롬프트를'); },
+  copyArticlePrompt() { if (!S.title.trim()) return toast('먼저 제목을 정해 주세요'); copyAndToast(articlePrompt(), null, '글쓰기 프롬프트를'); },
+  openClaude() { openExternal('https://claude.ai/new'); },
+  setLength(el) { S.length = el.dataset.k; save(); render(); },
+  article: doArticle,
+  toggleEdit() { if (ui.editArticle && S.article.trim()) { syncSlots(false); pushHistory(); } ui.editArticle = !ui.editArticle; save(); render(); },
+  plan: doPlan,
+  imgSearch(el) { doImageSearch(Number(el.dataset.i)); },
+  imgGen(el) { doImageGen(Number(el.dataset.i)); },
+  pickImg(el) { const s = S.slots[el.dataset.i], r = s.results[el.dataset.k]; s.image = { kind: 'naver', src: r.thumb, link: r.link, credit: r.title }; save(); render(); },
+  dropImg(el) { S.slots[el.dataset.i].image = null; save(); render(); },
+  async saveImg(el) {
+    const r = await saveSlotImage(Number(el.dataset.i));
+    toast(r === 'saved' ? '이미지를 저장했어요' : r === 'opened' ? '바로 받을 수 없어 원본을 열었어요. 거기서 저장해 주세요' : '저장하지 못했어요');
+  },
+  async saveAll() {
+    let saved = 0, opened = 0;
+    for (let i = 0; i < S.slots.length; i++) { if (!S.slots[i].image) continue; const r = await saveSlotImage(i); if (r === 'saved') saved++; else if (r === 'opened') opened++; }
+    toast('이미지 ' + saved + '장을 저장했어요' + (opened ? ' · ' + opened + '장은 원본을 열었어요' : ''));
+  },
+  copyTitle() { copyAndToast(S.title, null, '제목을'); },
+  copyBody() { copyAndToast(exportText(), exportHTML(), '본문을'); },
+  newSession() { if (!confirm('지금 작업을 비우고 새 글을 시작할까요? 쓴 글은 기록에 남아 있어요.')) return; S = newSession(); idb.clear(); ui.error = ''; save(); render(); scrollTo(0, 0); },
+  openSettings() { openDialog('dlgSettings', viewSettings()); },
+  openHistory() { openDialog('dlgHistory', viewHistory()); },
+  closeDialog() { closeDialogs(); render(); },
+  resetPrompts() { settings.titlePrompt = ''; settings.articlePrompt = ''; store.set('tw.settings', settings); openDialog('dlgSettings', viewSettings()); toast('기본 프롬프트로 되돌렸어요'); },
+  loadHistory(el) { const h = hist[el.dataset.i]; S = Object.assign(newSession(), { id: h.id, topic: h.topic, title: h.title, article: h.article, notes: h.notes || '', sources: h.sources || [], step: 3 }); idb.clear(); syncSlots(false); save(); closeDialogs(); render(); },
+  delHistory(el) { hist.splice(el.dataset.i, 1); store.set('tw.history', hist); openDialog('dlgHistory', viewHistory()); },
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.disabled) return;
+  const fn = actions[el.dataset.act]; if (fn) fn(el);
+});
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset.bind) {
+    setPath(S, el.dataset.bind, el.value); save();
+    if (el.dataset.article) { const c = $('#count'); if (c) c.textContent = countLine(); }
+  } else if (el.dataset.set) {
+    let v = el.value;
+    if (el.dataset.set === 'titlePrompt' && v.trim() === DEFAULT_TITLE_PROMPT) v = '';
+    if (el.dataset.set === 'articlePrompt' && v.trim() === DEFAULT_ARTICLE_PROMPT) v = '';
+    settings[el.dataset.set] = v; store.set('tw.settings', settings);
+  }
+});
+document.addEventListener('change', e => { if (e.target.dataset.rerender) render(); });
+document.querySelectorAll('dialog').forEach(d => d.addEventListener('close', () => render()));
+
+/* 안드로이드 뒤로가기: 대화상자를 닫거나 이전 단계로. 더 갈 곳이 없으면 false를 돌려 앱을 닫게 한다. */
+window.__trendWriter = { back() { if (closeDialogs()) return true; if (S.step > 1) { S.step--; save(); render(); return true; } return false; } };
+
+(async function init() {
+  render();
+  await detectTransport();
+  for (let i = 0; i < S.slots.length; i++) {
+    const im = S.slots[i].image;
+    if (im && im.kind === 'ai' && !im.src) im.src = (await idb.get('slot' + i)) || '';
+  }
+  render();
+})();
+</script>
+</body>
+</html>
