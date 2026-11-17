@@ -1287,8 +1287,11 @@ function resize() {
 new ResizeObserver(resize).observe(stage); resize();
 
 let skipGL = false; // automation: lay out labels without drawing WebGL
+let quiet = false;  // automation: model only, no callouts / highlights / arrows (title cards)
 function renderAt(i, time, clock) {
-  const step = STEPS[i]; const S = defaults(); step.apply(time, S); applyState(S, time, clock);
+  const step = STEPS[i]; const S = defaults(); step.apply(time, S);
+  if (quiet) { S.labels = []; S.hl = {}; S.arrows = {}; }
+  applyState(S, time, clock);
   if (!userCam) {
     const c = camAt(step, time);
     if (blend) {
@@ -1332,6 +1335,7 @@ window.__guide = {
   scene, outlines: outlineOn,
   zoom(z) { camZoom = z; },
   skipGL(v) { skipGL = v; },
+  quiet(v) { quiet = v; },
   shift(dy) { const w = stage.clientWidth, h = stage.clientHeight; if (dy) camera.setViewOffset(w, h, 0, dy, w, h); else camera.clearViewOffset(); },
   freeze(v = true) { frozen = v; },
   show(i, time, cam) {
