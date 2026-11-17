@@ -278,10 +278,26 @@ const MAT = {
   skin: () => new THREE.MeshStandardMaterial({ color: 0xd8a887, roughness: .72, transparent: true }),
 };
 const partMats = {};
+// Highlight = pulsing outline: an inflated back-face hull drawn behind each part mesh.
+const outlineMats = {};
+const outlineThick = { value: 0.2 }; // set per frame from camera distance (~6 px on screen)
+function outlineMat(part) {
+  if (outlineMats[part]) return outlineMats[part];
+  const m = new THREE.MeshBasicMaterial({ color: 0xff7a00, side: THREE.BackSide, transparent: true, opacity: 0, depthWrite: false });
+  m.userData.thick = outlineThick;
+  m.onBeforeCompile = sh => {
+    sh.uniforms.thick = m.userData.thick;
+    sh.vertexShader = 'uniform float thick;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  transformed += normalize(normal) * thick;');
+  };
+  return (outlineMats[part] = m);
+}
 function mesh(geo, mat, part, shadow = true) {
   const m = new THREE.Mesh(geo, mat);
   m.castShadow = shadow; m.receiveShadow = true;
-  if (part) (partMats[part] ||= new Set()).add(mat);
+  if (part) {
+    (partMats[part] ||= new Set()).add(mat);
+    const o = new THREE.Mesh(geo, outlineMat(part)); o.visible = false; o.renderOrder = 5; o.userData.outline = true; m.add(o);
+  }
   return m;
 }
 function at(o, x, y, z) { o.position.set(x, y, z); return o; }
@@ -323,6 +339,14 @@ function decal(tex, w, h, part) {
   if (part) tag(m, part);
   const d = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); d.receiveShadow = true; return d;
 }
+
+// The printed labels are drawn into canvases once, so wait (briefly) for their fonts.
+try {
+  await Promise.race([
+    Promise.all(['800 100px "Archivo"', '600 40px "Archivo"', '500 30px "IBM Plex Mono"'].map(f => document.fonts.load(f, 'DCD799 20V MAX BRUSHLESS 5Ah 0123456789'))),
+    new Promise(r => setTimeout(r, 2500)),
+  ]);
+} catch (e) { /* draw with fallback fonts */ }
 
 /* ================================================================
    THE TOOL
@@ -703,6 +727,8 @@ function placed(g, from, dir) { g.position.set(...from); g.quaternion.setFromUni
 const T = buildTool();
 const H = buildHands();
 const W = buildWorld();
+const outlineOn = [];
+toolRoot.traverse(o => { if (o.userData.outline) { for (const [k, m] of Object.entries(outlineMats)) if (o.material === m) o.userData.part = k; outlineOn.push(o); } });
 const ARROWS = {
   batIn: placed(straightArrow(5), [9.5, -15.6, -5.2], [-1, 0, 0]),
   batOut: placed(straightArrow(5), [3.0, -15.6, -5.2], [1, 0, 0]),
@@ -1137,20 +1163,22 @@ function applyState(S, t, clock) {
   const pulse = .55 + .45 * Math.sin(clock * 5.5);
   for (const [k, set] of Object.entries(partMats)) {
     const h = S.hl[k] || 0;
-    for (const m of set) { m.emissive.setHex(0xffb31a); m.emissiveIntensity = h * (.035 + .085 * pulse); }
+    const om = outlineMats[k]; if (om) om.opacity = h * (.55 + .45 * pulse);
   }
+  outlineOn.forEach(o => o.visible = !!S.hl[o.userData.part]);
 }
 
 /* ================================================================
    camera
    ================================================================ */
+let camZoom = 1;
 function camAt(step, t) {
   const K = step.cam; let a = K[0], b = K[0], k = 0;
   if (t >= K[K.length - 1].t) a = b = K[K.length - 1];
   else for (let i = 0; i < K.length - 1; i++) if (t >= K[i].t && t < K[i + 1].t) { a = K[i]; b = K[i + 1]; k = ease((t - a.t) / (b.t - a.t)); break; }
   const az = lerp(a.az, b.az, k) * D2R, el = lerp(a.el, b.el, k) * D2R;
   const aspect = camera.aspect || 1.5;
-  const d = lerp(a.d, b.d, k) * Math.pow(Math.max(1, 1.5 / aspect), .95);
+  const d = lerp(a.d, b.d, k) * Math.pow(Math.max(1, 1.5 / aspect), .95) * camZoom;
   const tg = new V3(lerp(a.tg[0], b.tg[0], k), lerp(a.tg[1], b.tg[1], k), lerp(a.tg[2], b.tg[2], k));
   const pos = new V3(tg.x + d * Math.cos(el) * Math.sin(az), tg.y + d * Math.sin(el), tg.z + d * Math.cos(el) * Math.cos(az));
   return { pos, tg };
@@ -1269,6 +1297,7 @@ function renderAt(i, time, clock) {
     }
     camera.position.copy(c.pos); controls.target.copy(c.tg); camera.lookAt(c.tg);
   } else controls.update();
+  outlineThick.value = camera.position.distanceTo(controls.target) * 0.0042;
   renderer.render(scene, camera); labelRenderer.render(scene, camera);
   return S;
 }
@@ -1297,7 +1326,10 @@ requestAnimationFrame(frame);
 
 /* hooks for automation (screenshots, video frames, GLB export) */
 window.__guide = {
-  steps: STEPS.map(s => ({ id: s.id, title: s.title, dur: s.dur })),
+  steps: STEPS.map(s => ({ id: s.id, title: s.title, fig: s.fig, dur: s.dur, intro: s.intro, caps: s.caps, warn: s.warn || null, note: s.note || null, cam: s.cam })),
+  scene, outlines: outlineOn,
+  zoom(z) { camZoom = z; },
+  shift(dy) { const w = stage.clientWidth, h = stage.clientHeight; if (dy) camera.setViewOffset(w, h, 0, dy, w, h); else camera.clearViewOffset(); },
   freeze(v = true) { frozen = v; },
   show(i, time, cam) {
     stepIdx = i; t = time; userCam = false; blend = null; renderDetail();
@@ -1307,10 +1339,9 @@ window.__guide = {
   async exportGLB() {
     const { GLTFExporter } = await import('three/addons/exporters/GLTFExporter.js');
     this.show(0, 15.9);
-    const hide = [H.handR, H.handL, T.spot, T.spot.target, T.cone, W.brush, bubble, ...Object.values(ARROWS), ...Object.values(CALLOUTS).flatMap(c => [c.obj, c.line])];
+    const hide = [...outlineOn, H.handR, H.handL, T.spot, T.spot.target, T.cone, W.brush, bubble, ...Object.values(ARROWS), ...Object.values(CALLOUTS).flatMap(c => [c.obj, c.line])];
     const prev = hide.map(o => o.visible); hide.forEach(o => o.visible = false);
     const vib = toolRoot.position.clone(); toolRoot.position.set(0, 0, 0); toolRoot.scale.setScalar(0.01); // export in metres
-    partMats && Object.values(partMats).forEach(set => set.forEach(m => m.emissiveIntensity = 0));
     const buf = await new GLTFExporter().parseAsync(toolRoot, { binary: true, onlyVisible: true });
     toolRoot.scale.setScalar(1); toolRoot.position.copy(vib); hide.forEach((o, i) => o.visible = prev[i]);
     return Array.from(new Uint8Array(buf));
