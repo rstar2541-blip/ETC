@@ -1,0 +1,1321 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DCD799 해머드릴 3D 가이드</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one-screen split. 3D stage on the left with transport bar, instruction rail on the right; stacks on phones. */
+:root{
+  --bg:#eceef0; --panel:#f7f8f9; --stage:#dfe3e7; --fg:#15181c; --muted:#5a636d; --line:#d2d7dc;
+  --accent:#f2b000; --accent-ink:#1d1600; --accent-soft:#fdf0c2;
+  --warn:#a8311f; --warn-bg:#f9e7e2; --note-fg:#26476a; --note-bg:#e6edf5;
+  --glass:rgba(248,249,250,.86); --label-bg:rgba(255,255,255,.93); --chip:#ffffff; --tag:#8e949a;
+  --font-display:"Archivo","IBM Plex Sans KR",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111316; --panel:#171a1e; --stage:#1c2025; --fg:#e7eaed; --muted:#98a1ab; --line:#2a2f35;
+    --accent:#f5b800; --accent-ink:#1d1600; --accent-soft:#3a3016;
+    --warn:#ff8f78; --warn-bg:#3a1e19; --note-fg:#a8c7e9; --note-bg:#1b2836;
+    --glass:rgba(23,26,30,.86); --label-bg:rgba(28,32,37,.93); --chip:#22272c; --tag:#6c737b;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111316; --panel:#171a1e; --stage:#1c2025; --fg:#e7eaed; --muted:#98a1ab; --line:#2a2f35;
+  --accent:#f5b800; --accent-ink:#1d1600; --accent-soft:#3a3016;
+  --warn:#ff8f78; --warn-bg:#3a1e19; --note-fg:#a8c7e9; --note-bg:#1b2836;
+  --glass:rgba(23,26,30,.86); --label-bg:rgba(28,32,37,.93); --chip:#22272c; --tag:#6c737b;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 var(--font-body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+#app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 392px}
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden;background:var(--stage)}
+#c{display:block;width:100%;height:100%;touch-action:none}
+#labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+
+/* callouts: grey numbered discs, same convention as the printed manual */
+.co{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 3px;border-radius:999px;background:var(--label-bg);
+  box-shadow:0 1px 3px rgba(0,0,0,.18);font:600 12.5px/1.2 var(--font-body);white-space:nowrap;color:var(--fg)}
+.co b{flex:none;width:21px;height:21px;border-radius:50%;background:var(--tag);color:#fff;display:grid;place-items:center;
+  font:700 11.5px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.co.note b{background:var(--warn)}
+.compact .co span{display:none}
+.compact .co{padding:3px}
+.bubble{padding:4px 11px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font:800 14px/1.3 var(--font-body);
+  box-shadow:0 2px 8px rgba(0,0,0,.25);white-space:nowrap}
+
+.hud{position:absolute;top:max(12px,env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));right:12px;
+  display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.chip{display:inline-flex;align-items:baseline;gap:6px;padding:4px 10px;border-radius:8px;background:var(--glass);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid var(--line);font-size:12.5px}
+.chip i{font-style:normal;color:var(--muted);font-size:11px;letter-spacing:.04em}
+.chip strong{font-weight:600;font-variant-numeric:tabular-nums}
+.chip.on strong{color:var(--fg)}
+.chip.hot{border-color:var(--accent)}
+
+.transport{position:absolute;left:max(12px,env(safe-area-inset-left,0px));right:12px;bottom:12px;display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:14px;background:var(--glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--line)}
+.tbtn{flex:none;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--chip);display:grid;place-items:center;cursor:pointer}
+.tbtn:hover{border-color:var(--muted)}
+.tbtn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tbtn svg{width:16px;height:16px}
+.tbtn:focus-visible,.step:focus-visible,.toggle:focus-visible,#scrub:focus-visible,.recenter:focus-visible,.caps li:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#scrub{flex:1;min-width:0;accent-color:var(--accent);height:24px}
+.time{flex:none;font:500 12px var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
+.toggle{flex:none;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;user-select:none;padding:0 2px}
+.toggle input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+.recenter{position:absolute;right:12px;top:max(12px,env(safe-area-inset-top,0px));padding:6px 11px;border-radius:9px;border:1px solid var(--line);
+  background:var(--glass);font-size:12.5px;cursor:pointer}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px;text-align:center;padding:24px}
+
+#panel{min-width:0;overflow:auto;background:var(--panel);border-left:1px solid var(--line);
+  padding-block:22px 32px;padding-left:22px;padding-right:max(22px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand .model{font:800 13px/1 var(--font-display);letter-spacing:.14em;color:var(--muted)}
+.brand h1{margin:0;font:700 22px/1.25 var(--font-body);text-wrap:balance}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:13px}
+
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.step{width:100%;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;padding:7px 8px;border:0;border-radius:9px;
+  background:transparent;text-align:left;cursor:pointer}
+.step:hover{background:var(--chip)}
+.step .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);
+  font:700 12px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--muted)}
+.step .tt{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.step .fg{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.step[aria-current="step"]{background:var(--accent-soft)}
+.step[aria-current="step"] .n{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.step[aria-current="step"] .tt{font-weight:700}
+.step.done .n{border-color:var(--muted);color:var(--fg)}
+
+.detail{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--line);padding-top:18px}
+.allsteps{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.allsteps h3{margin:0;font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--muted)}
+.detail header{display:flex;flex-direction:column;gap:4px}
+.figtag{align-self:flex-start;font:600 11.5px/1 var(--font-body);letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);padding:4px 8px;border-radius:6px}
+.detail h2{margin:0;font:700 20px/1.3 var(--font-body);text-wrap:balance}
+.detail .intro{margin:0;color:var(--muted);font-size:14px}
+.caps{list-style:none;margin:0;padding:0;display:grid;gap:4px;counter-reset:c}
+.caps li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;padding:7px 9px;border-radius:9px;cursor:pointer;font-size:14.5px;line-height:1.55;color:var(--muted)}
+.caps li .ts{font:500 11px/1.9 var(--font-mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.caps li.past{color:var(--fg)}
+.caps li.now{background:var(--chip);color:var(--fg);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.box{border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.55}
+.box b{display:block;font-size:12px;letter-spacing:.06em;margin-bottom:2px}
+.warn{background:var(--warn-bg);color:var(--fg)}
+.warn b{color:var(--warn)}
+.note{background:var(--note-bg);color:var(--fg)}
+.note b{color:var(--note-fg)}
+details.spec{border-top:1px solid var(--line);padding-top:14px}
+details.spec summary{cursor:pointer;font-weight:600;font-size:14px}
+.spec table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}
+.spec td{padding:6px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.spec td:last-child{text-align:right;font-family:var(--font-mono);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:12px}
+.fineprint{font-size:12px;color:var(--muted);margin:0}
+
+@media (max-width:880px){
+  #app{display:block;height:auto}
+  #stage{height:60vh;height:60svh;min-height:340px}
+  #panel{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .steps{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+  .steps li{flex:none}
+  .step{grid-template-columns:24px auto;padding:6px 10px 6px 6px;border:1px solid var(--line);border-radius:999px}
+  .step .n{width:24px;height:24px}
+  .step .fg{display:none}
+  .allsteps{order:1;border-top:0;padding-top:0}
+  .allsteps h3{display:none}
+  .detail{order:2}
+  details.spec{order:3}
+  .fineprint{order:4}
+  .toggle span{display:none}
+  .time{min-width:0}
+}
+@media (prefers-reduced-motion:reduce){ *{scroll-behavior:auto!important} }
+</style>
+</head>
+<body>
+<div id="app">
+  <section id="stage" aria-label="3D 모델 보기">
+    <canvas id="c"></canvas>
+    <div id="labels"></div>
+    <div class="hud" id="hud" aria-live="polite"></div>
+    <button class="recenter" id="recenter" type="button" hidden>시점 되돌리기</button>
+    <div class="loading" id="loading">3D 모델을 불러오는 중…</div>
+    <div class="transport" role="group" aria-label="애니메이션 재생">
+      <button class="tbtn" id="prev" type="button" aria-label="이전 단계"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 2h2v12H3zM14 2.8v10.4L6.2 8z"/></svg></button>
+      <button class="tbtn primary" id="play" type="button" aria-label="일시정지"><svg viewBox="0 0 16 16" fill="currentColor" id="playIcon"><path d="M4 2h3v12H4zM9 2h3v12H9z"/></svg></button>
+      <button class="tbtn" id="next" type="button" aria-label="다음 단계"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M11 2h2v12h-2zM2 2.8v10.4L9.8 8z"/></svg></button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="단계 진행 위치">
+      <span class="time" id="time">0.0 / 0.0s</span>
+      <label class="toggle"><input type="checkbox" id="chain" checked><span>연속 재생</span></label>
+    </div>
+  </section>
+
+  <aside id="panel">
+    <div class="brand">
+      <span class="model">DCD799P1T</span>
+      <h1>해머 드릴 드라이버 3D 사용 설명</h1>
+      <p>설명서 그림 A–G와 한국어 설명을 16단계 3D 애니메이션으로 옮겼습니다. 화면을 드래그하면 모델을 돌려 볼 수 있습니다.</p>
+    </div>
+    <section class="detail" id="detail" aria-live="polite"></section>
+    <nav class="allsteps" aria-label="전체 단계"><h3>전체 단계</h3><ol class="steps" id="steps"></ol></nav>
+    <details class="spec">
+      <summary>기술 데이터 (DCD799)</summary>
+      <table>
+        <tr><td>전압</td><td>18 (20 Max) V<sub>DC</sub></td></tr>
+        <tr><td>배터리 유형</td><td>리튬 이온</td></tr>
+        <tr><td>무부하 속도 1단 / 2단</td><td>0–450 / 0–1,650 min⁻¹</td></tr>
+        <tr><td>충격률 1단 / 2단</td><td>0–7,650 / 0–28,050 min⁻¹</td></tr>
+        <tr><td>최대 토크 (딱딱한 / 부드러운)</td><td>74 / 26 Nm</td></tr>
+        <tr><td>척 용량</td><td>1.5–13 mm</td></tr>
+        <tr><td>최대 드릴링 용량 목재 / 금속 / 석조물</td><td>30 / 13 / 13 mm</td></tr>
+        <tr><td>무게 (배터리 제외)</td><td>1.17 kg</td></tr>
+      </table>
+    </details>
+    <p class="fineprint">비공식 학습용 3D 모델입니다. 제품 형태는 판매 사진을 참고해 단순화했으며, 실제 작업 전에는 반드시 제품과 함께 제공된 사용 설명서를 확인하십시오.</p>
+  </aside>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script>
+  setTimeout(function(){ if(!window.__guide){ var l=document.getElementById('loading'); if(l) l.textContent='3D 엔진(three.js)을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침하세요.'; } }, 12000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+/* ================================================================
+   helpers
+   Model units: centimetres. Tool space: +X toward the chuck, +Y up,
+   +Z = tool's right side. Spindle axis is the X axis.
+   ================================================================ */
+const V3 = THREE.Vector3, V2 = THREE.Vector2;
+const TAU = Math.PI * 2, D2R = Math.PI / 180;
+const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, k) => a + (b - a) * k;
+const ease = k => { k = clamp(k); return k * k * (3 - 2 * k); };
+const seg = (t, a, b) => ease((t - a) / (b - a));
+const lin = (t, a, b) => clamp((t - a) / (b - a));
+const win = (t, a, b, f = .3) => Math.min(lin(t, a, a + f), 1 - lin(t, b - f, b));
+function integ(f, t, h = 1 / 120) { let s = 0; for (let x = 0; x < t; x += h) { const w = Math.min(h, t - x); s += f(x + w / 2) * w; } return s; }
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const $ = s => document.querySelector(s);
+
+/* ================================================================
+   renderer / scene
+   ================================================================ */
+const stage = $('#stage');
+const canvas = $('#c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.85;
+const bgBase = new THREE.Color('#dfe3e7'), bgDark = new THREE.Color('#07080a');
+scene.background = bgBase.clone();
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.5, 2000);
+const labelRenderer = new CSS2DRenderer({ element: $('#labels') });
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = false;
+controls.minDistance = 8; controls.maxDistance = 260;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x8b9096, 0.65);
+scene.add(hemi);
+const key = new THREE.DirectionalLight(0xffffff, 2.3);
+key.position.set(-30, 85, 45);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 10, far: 220 });
+key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xdfe8ff, 1.1);
+rim.position.set(45, 35, -60);
+scene.add(rim);
+
+const floorMat = new THREE.ShadowMaterial({ opacity: 0.2 });
+const floor = new THREE.Mesh(new THREE.CircleGeometry(400, 64), floorMat);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+scene.add(floor);
+
+/* ================================================================
+   materials + highlight registry
+   ================================================================ */
+const MAT = {
+  yellow: () => new THREE.MeshPhysicalMaterial({ color: 0xf4b000, roughness: .42, clearcoat: .25, clearcoatRoughness: .55 }),
+  black: () => new THREE.MeshStandardMaterial({ color: 0x1c1d20, roughness: .55 }),
+  rubber: () => new THREE.MeshStandardMaterial({ color: 0x242528, roughness: .86 }),
+  dark: () => new THREE.MeshStandardMaterial({ color: 0x2d3034, roughness: .62 }),
+  slot: () => new THREE.MeshStandardMaterial({ color: 0x050506, roughness: .9 }),
+  gray: () => new THREE.MeshStandardMaterial({ color: 0x8c9299, metalness: .75, roughness: .38 }),
+  chrome: () => new THREE.MeshStandardMaterial({ color: 0xdde1e6, metalness: 1, roughness: .17 }),
+  steel: () => new THREE.MeshStandardMaterial({ color: 0xc3c8ce, metalness: .92, roughness: .28 }),
+  skin: () => new THREE.MeshStandardMaterial({ color: 0xd8a887, roughness: .72, transparent: true }),
+};
+const partMats = {};
+function mesh(geo, mat, part, shadow = true) {
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = shadow; m.receiveShadow = true;
+  if (part) (partMats[part] ||= new Set()).add(mat);
+  return m;
+}
+function at(o, x, y, z) { o.position.set(x, y, z); return o; }
+function tag(mat, part) { (partMats[part] ||= new Set()).add(mat); return mat; }
+// LatheGeometry revolves around Y; we want the spindle axis on +X.
+function latheX(pts, segs = 64) {
+  const g = new THREE.LatheGeometry(pts.map(([r, x]) => new V2(r, x)), segs);
+  g.rotateZ(-Math.PI / 2);
+  return g;
+}
+function cylX(r1, r2, len, segs = 32) { const g = new THREE.CylinderGeometry(r2, r1, len, segs); g.rotateZ(-Math.PI / 2); return g; } // r1 at -X end, r2 at +X end
+// orient a plane: local +Z -> n, local +Y -> up
+function orient(obj, pos, n, up) {
+  const z = new V3(...n).normalize(), y = new V3(...up).normalize();
+  const x = new V3().crossVectors(y, z).normalize(); y.crossVectors(z, x);
+  obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+  obj.position.set(...pos); return obj;
+}
+function capsuleBetween(a, b, r, mat) {
+  const A = new V3(...a), B = new V3(...b);
+  const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, A.distanceTo(B), 6, 14), mat);
+  m.position.copy(A).add(B).multiplyScalar(.5);
+  m.quaternion.setFromUnitVectors(new V3(0, 1, 0), B.clone().sub(A).normalize());
+  m.castShadow = true; return m;
+}
+
+/* ================================================================
+   canvas textures (labels printed on the tool)
+   ================================================================ */
+const FONT = '"Archivo","Arial Black","Helvetica Neue",Arial,sans-serif';
+function canvasTex(w, h, draw) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); draw(g, w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function decal(tex, w, h, part) {
+  const m = new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: .55, polygonOffset: true, polygonOffsetFactor: -4 });
+  if (part) tag(m, part);
+  const d = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); d.receiveShadow = true; return d;
+}
+
+/* ================================================================
+   THE TOOL
+   ================================================================ */
+const toolRoot = new THREE.Group(); toolRoot.name = 'DCD799'; scene.add(toolRoot);
+const body = new THREE.Group(); body.name = 'body'; toolRoot.add(body);
+
+function buildTool() {
+  /* --- motor housing + rear cap with vents --- */
+  const housing = mesh(new RoundedBoxGeometry(4.8, 6.3, 5.6, 5, 0.8), MAT.yellow(), 'housing');
+  housing.position.set(-1.45, 0.2, 0); body.add(housing);
+  const rear = mesh(new RoundedBoxGeometry(1.0, 5.4, 5.2, 4, 0.45), MAT.dark(), 'vent');
+  rear.position.set(-4.05, 0.2, 0); body.add(rear);
+  const slotM = MAT.slot(); tag(slotM, 'vent');
+  for (const s of [-1, 1]) for (const x of [-3.8, -4.05, -4.3]) {
+    const v = mesh(new THREE.BoxGeometry(0.12, 3.2, 0.1), slotM, null, false); v.position.set(x, 0.2, s * 2.61); body.add(v);
+  }
+  for (const z of [-1.5, -0.75, 0, 0.75, 1.5]) {
+    const v = mesh(new THREE.BoxGeometry(0.1, 3.1, 0.14), slotM, null, false); v.position.set(-4.56, 0.2, z); body.add(v);
+  }
+  // shoulder vents on the yellow housing (the "||" slots in the photos)
+  for (const y of [3.36, -2.96]) for (const z of [-0.35, 0.35]) {
+    const v = mesh(new THREE.BoxGeometry(0.9, 0.06, 0.16), slotM, null, false); v.position.set(-1.45, y, z); body.add(v);
+  }
+
+  /* --- housing prints --- */
+  const plateTex = canvasTex(512, 248, (g, w, h) => {
+    rr(g, 4, 4, w - 8, h - 8, 34); g.fillStyle = '#141516'; g.fill();
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#f4b000'; g.font = `800 116px ${FONT}`; g.fillText('DCD799', w / 2, 98);
+    g.fillStyle = '#f0f0f0'; g.font = `700 38px ${FONT}`; g.fillText('20V MAX  ·  BRUSHLESS', w / 2, 188);
+  });
+  body.add(orient(decal(plateTex, 3.15, 1.53), [-1.45, 0.9, -2.808], [0, 0, -1], [0, 1, 0]));
+  const specTex = canvasTex(512, 330, (g, w, h) => {
+    rr(g, 2, 2, w - 4, h - 4, 18); g.fillStyle = '#f3f3f0'; g.fill();
+    g.fillStyle = '#151515'; g.textBaseline = 'top';
+    g.font = `800 34px ${FONT}`; g.fillText('DCD799', 26, 22);
+    g.font = `600 22px Arial,sans-serif`;
+    ['1/2" (13 mm) HAMMERDRILL / DRIVER', '18 V ⎓  (20 V MAX)', 'n0  0-450 / 0-1650 min⁻¹', 'bpm 0-7650 / 0-28050'].forEach((s, i) => g.fillText(s, 26, 72 + i * 32));
+    g.fillStyle = '#c4281c'; g.fillRect(26, 212, 150, 34); g.fillStyle = '#fff'; g.font = `800 22px Arial,sans-serif`; g.fillText('WARNING', 40, 218);
+    g.fillStyle = '#151515'; g.font = `600 18px Arial,sans-serif`; g.fillText('READ INSTRUCTION MANUAL.', 190, 214); g.fillText('WEAR EYE PROTECTION.', 190, 240);
+    g.font = `500 18px Arial,sans-serif`; g.fillText('Li-ion · TYPE 1', 26, 280);
+  });
+  body.add(orient(decal(specTex, 3.15, 2.03), [-1.45, 0.55, 2.808], [0, 0, 1], [0, 1, 0]));
+
+  /* --- speed selector (7) on top: slot + slider + 1 / 2 marks --- */
+  const slot = mesh(new THREE.BoxGeometry(2.25, 0.08, 1.3), MAT.slot(), null, false); slot.position.set(-1.45, 3.35, 0); body.add(slot);
+  const knob = new THREE.Group(); knob.name = 'speedSelector'; toolRoot.add(knob);
+  const km = MAT.black();
+  knob.add(mesh(new RoundedBoxGeometry(0.85, 0.42, 1.12, 2, 0.13), km, 'speedsel'));
+  for (const x of [-0.24, 0, 0.24]) { const r = mesh(new THREE.BoxGeometry(0.08, 0.1, 1.0), km); r.position.set(x, 0.24, 0); knob.add(r); }
+  knob.position.set(-0.85, 3.55, 0);
+  const digit = d => canvasTex(128, 128, (g) => { g.fillStyle = '#141516'; g.font = `800 96px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(d, 64, 70); });
+  body.add(orient(decal(digit('1'), 0.62, 0.62), [-2.05, 3.356, 1.12], [0, 1, 0], [1, 0, 0]));
+  body.add(orient(decal(digit('2'), 0.62, 0.62), [-0.85, 3.356, 1.12], [0, 1, 0], [1, 0, 0]));
+
+  /* --- gear case + collar indicator --- */
+  const gear = mesh(cylX(2.62, 2.5, 1.5, 48), MAT.gray(), 'gear'); gear.position.x = 1.6; body.add(gear);
+  const triTex = canvasTex(64, 64, g => { g.fillStyle = '#fff'; g.beginPath(); g.moveTo(32, 6); g.lineTo(58, 56); g.lineTo(6, 56); g.closePath(); g.fill(); });
+  body.add(orient(decal(triTex, 0.5, 0.5), [2.05, 2.525, 0], [0, 1, 0], [1, 0, 0]));
+
+  /* --- mode selection collar (6): number band + ribbed ring --- */
+  const collar = new THREE.Group(); collar.name = 'modeCollar'; toolRoot.add(collar);
+  const cm = MAT.black();
+  collar.add(mesh(latheX([[2.3, 2.34], [2.36, 2.4], [2.36, 3.12], [2.42, 3.18], [2.42, 5.95], [2.2, 6.3], [1.95, 6.38], [1.9, 6.38]]), cm, 'collar'));
+  const ribG = new THREE.BoxGeometry(2.6, 0.2, 0.3);
+  for (let i = 0; i < 32; i++) {
+    const a = i / 32 * TAU; const r = mesh(ribG, cm);
+    r.position.set(4.55, 2.45 * Math.cos(a), 2.45 * Math.sin(a)); r.rotation.x = a; collar.add(r);
+  }
+  const R = 2.368;
+  for (let i = 0; i <= 16; i++) {
+    const tex = canvasTex(128, 128, g => {
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      if (i === 0) { // drill symbol
+        g.fillRect(56, 80, 16, 38);
+        g.beginPath(); g.moveTo(54, 80); g.lineTo(74, 80); g.lineTo(74, 30); g.lineTo(64, 8); g.lineTo(54, 30); g.closePath(); g.fill();
+        g.strokeStyle = '#141516'; g.lineWidth = 5; for (let y = 34; y <= 72; y += 12) { g.beginPath(); g.moveTo(54, y + 9); g.lineTo(74, y); g.stroke(); }
+      } else if (i === 16) { // hammer symbol
+        rr(g, 26, 16, 76, 32, 6); g.fill(); g.fillRect(56, 44, 16, 72);
+      } else { g.font = `800 ${i >= 10 ? 66 : 82}px ${FONT}`; g.fillText(String(i), 64, 68); }
+    });
+    const pivot = new THREE.Group(); pivot.rotation.x = i * 18 * D2R;
+    pivot.add(orient(decal(tex, 0.66, 0.66), [2.76, R, 0], [0, 1, 0], [1, 0, 0]));
+    collar.add(pivot);
+  }
+
+  /* --- spindle: chuck sleeve (10), keyless chuck nose + jaws (9), bit holder --- */
+  const spindle = new THREE.Group(); spindle.name = 'spindle'; toolRoot.add(spindle);
+  const sleeve = new THREE.Group(); sleeve.name = 'chuckSleeve'; spindle.add(sleeve);
+  const sm = MAT.rubber();
+  sleeve.add(mesh(latheX([[1.9, 6.38], [1.98, 6.5], [1.98, 8.45], [1.92, 8.62]]), sm, 'sleeve'));
+  const knG = new THREE.BoxGeometry(1.85, 0.08, 0.13);
+  for (let i = 0; i < 44; i++) { const a = i / 44 * TAU; const k = mesh(knG, sm); k.position.set(7.45, 1.99 * Math.cos(a), 1.99 * Math.sin(a)); k.rotation.x = a; sleeve.add(k); }
+  const nm = MAT.chrome(); nm.side = THREE.DoubleSide;
+  spindle.add(mesh(latheX([[1.9, 8.6], [1.78, 9.1], [1.52, 9.75], [1.18, 10.3], [0.92, 10.7], [0.88, 10.75], [0.76, 10.75], [0.76, 10.35], [0.02, 10.35]]), nm, 'nose'));
+  const jaws = [];
+  const jm = MAT.chrome(); tag(jm, 'nose');
+  for (let k = 0; k < 3; k++) {
+    const pv = new THREE.Group(); pv.rotation.x = k * TAU / 3; spindle.add(pv);
+    const g = new THREE.BoxGeometry(1.8, 0.34, 0.34); g.translate(-0.9, 0, 0); g.rotateZ(-0.21);
+    const j = mesh(g, jm); pv.add(j); jaws.push(j);
+  }
+  const bitHolder = new THREE.Group(); bitHolder.name = 'bit'; spindle.add(bitHolder);
+  const bits = { twist: makeTwistBit(), masonry: makeMasonryBit(), driver: makeDriverBit() };
+  Object.values(bits).forEach(b => { b.visible = false; bitHolder.add(b); });
+
+  /* --- handle: yellow neck, black grip, trigger (4), fwd/rev button (5) --- */
+  // side silhouettes traced from the product photo (inset by the bevel size)
+  const ns = new THREE.Shape();
+  ns.moveTo(1.9, -2.6); ns.lineTo(3.7, -2.75); ns.quadraticCurveTo(4.05, -2.9, 3.95, -3.55); ns.quadraticCurveTo(3.85, -4.0, 3.4, -4.05);
+  ns.lineTo(-2.3, -4.05); ns.quadraticCurveTo(-3.7, -4.0, -4.1, -3.1); ns.lineTo(-4.05, -2.6); ns.closePath();
+  const neckG = new THREE.ExtrudeGeometry(ns, { depth: 3.6, bevelEnabled: true, bevelThickness: .3, bevelSize: .3, bevelSegments: 4, curveSegments: 20 });
+  neckG.translate(0, 0, -1.8);
+  body.add(mesh(neckG, MAT.yellow(), 'neck'));
+
+  const gs = new THREE.Shape();
+  gs.moveTo(1.9, -2.8); gs.lineTo(2.05, -6.1);
+  gs.splineThru([new V2(1.35, -6.75), new V2(0.92, -7.6), new V2(0.8, -8.6), new V2(0.45, -9.8), new V2(0.05, -11.0), new V2(-0.02, -12.0), new V2(0.2, -12.9)]);
+  gs.lineTo(-2.95, -12.9);
+  gs.splineThru([new V2(-2.9, -11.5), new V2(-2.95, -9.9), new V2(-2.8, -8.6), new V2(-2.5, -7.3), new V2(-2.2, -6.1), new V2(-2.15, -4.9), new V2(-2.6, -3.6), new V2(-3.2, -2.8)]);
+  gs.closePath();
+  const gripG = new THREE.ExtrudeGeometry(gs, { depth: 2.9, bevelEnabled: true, bevelThickness: .35, bevelSize: .35, bevelSegments: 5, curveSegments: 24 });
+  gripG.translate(0, 0, -1.45);
+  body.add(mesh(gripG, MAT.rubber(), 'grip'));
+  // yellow accent strip down the back of the grip (as on the real tool)
+  const as = new THREE.Shape();
+  as.moveTo(-2.15, -4.3); as.splineThru([new V2(-2.2, -6.1), new V2(-2.5, -7.3), new V2(-2.8, -8.6), new V2(-2.95, -9.9), new V2(-2.9, -11.2)]);
+  as.lineTo(-2.55, -11.2); as.splineThru([new V2(-2.55, -9.9), new V2(-2.45, -8.6), new V2(-2.15, -7.3), new V2(-1.85, -6.1), new V2(-1.8, -4.3)]); as.closePath();
+  const accG = new THREE.ExtrudeGeometry(as, { depth: 3.62, bevelEnabled: true, bevelThickness: .06, bevelSize: .06, bevelSegments: 1, curveSegments: 16 });
+  accG.translate(0, 0, -1.81);
+  body.add(mesh(accG, MAT.yellow(), 'grip'));
+  const stripeTex = canvasTex(512, 104, (g, w, h) => {
+    rr(g, 2, 2, w - 4, h - 4, 40); g.fillStyle = '#f4b000'; g.fill();
+    g.fillStyle = '#141516'; g.font = `800 58px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('BRUSHLESS', w / 2, h / 2 + 3);
+  });
+  const sd = new V3(-0.447, -0.894, 0);
+  for (const s of [-1, 1]) {
+    const n = new V3(0, 0, s); const up = new V3().crossVectors(n, sd);
+    body.add(orient(decal(stripeTex, 3.6, 0.74, 'grip'), [-1.95, -8.4, s * 1.812], n.toArray(), up.toArray()));
+  }
+
+  const ts = new THREE.Shape();
+  ts.moveTo(1.9, -4.35); ts.lineTo(3.3, -4.35); ts.quadraticCurveTo(3.62, -4.7, 3.55, -5.4);
+  ts.quadraticCurveTo(3.5, -6.0, 3.15, -6.35); ts.lineTo(1.9, -6.35); ts.closePath();
+  const trigG = new THREE.ExtrudeGeometry(ts, { depth: 1.1, bevelEnabled: true, bevelThickness: .18, bevelSize: .18, bevelSegments: 3, curveSegments: 16 });
+  trigG.translate(0, 0, -0.55);
+  const trigger = mesh(trigG, MAT.yellow(), 'trigger'); trigger.name = 'trigger'; toolRoot.add(trigger);
+
+  const frG = new THREE.CylinderGeometry(0.4, 0.4, 4.9, 24); frG.rotateX(Math.PI / 2);
+  const fwdrev = mesh(frG, MAT.black(), 'fwdrev'); fwdrev.name = 'forwardReverse'; fwdrev.position.set(1.8, -3.2, 0); toolRoot.add(fwdrev);
+
+  /* --- foot, LED work light (8), date code (11) --- */
+  const fs = new THREE.Shape();
+  fs.moveTo(3.2, -12.7); fs.quadraticCurveTo(3.75, -12.95, 3.95, -13.55); fs.lineTo(-3.5, -13.55); fs.lineTo(-3.45, -12.7); fs.closePath();
+  const footG = new THREE.ExtrudeGeometry(fs, { depth: 6.8, bevelEnabled: true, bevelThickness: .35, bevelSize: .35, bevelSegments: 4, curveSegments: 16 });
+  footG.translate(0, 0, -3.4);
+  body.add(mesh(footG, MAT.black(), 'foot'));
+  for (const s of [-1, 1]) { // short yellow trim along the foot sides
+    const tr = mesh(new THREE.BoxGeometry(5.6, 0.18, 0.05), MAT.yellow(), 'foot', false); tr.position.set(0.5, -12.95, s * 3.77); body.add(tr);
+  }
+  const pod = mesh(new RoundedBoxGeometry(1.4, 0.62, 3.0, 3, 0.22), MAT.yellow(), 'led'); pod.position.set(3.05, -12.3, 0); body.add(pod);
+  const lensM = new THREE.MeshStandardMaterial({ color: 0xdfe6ee, roughness: .2, emissive: 0xfff3d6, emissiveIntensity: 0.05 });
+  const lensG = new THREE.CylinderGeometry(0.4, 0.4, 0.12, 28); lensG.rotateZ(-Math.PI / 2);
+  const lens = new THREE.Mesh(lensG, lensM); lens.position.set(3.76, -12.3, 0); lens.rotation.z = 20 * D2R; body.add(lens);
+  const spot = new THREE.SpotLight(0xfff2d8, 0, 140, 0.42, 0.65, 0);
+  spot.position.set(3.85, -12.3, 0); toolRoot.add(spot);
+  spot.target.position.set(30, -2.3, 0); toolRoot.add(spot.target);
+  const coneG = new THREE.ConeGeometry(7.5, 26, 40, 1, true); coneG.translate(0, -13, 0); coneG.rotateZ(Math.PI / 2);
+  const coneM = new THREE.MeshBasicMaterial({ color: 0xfff1c9, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const cone = new THREE.Mesh(coneG, coneM); cone.position.set(3.85, -12.3, 0); cone.rotation.z = 21 * D2R; cone.visible = false; toolRoot.add(cone);
+  const dateTex = canvasTex(256, 64, (g, w, h) => { rr(g, 2, 2, w - 4, h - 4, 8); g.fillStyle = '#d6d9dc'; g.fill(); g.fillStyle = '#111'; g.font = '500 34px "IBM Plex Mono",Menlo,monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('0000 00-00', w / 2, h / 2 + 2); });
+  body.add(orient(decal(dateTex, 2.0, 0.5, 'date'), [-3.855, -13.12, 0], [-1, 0, 0], [0, 1, 0]));
+
+  /* --- battery pack (1), release button (2), fuel gauge (12) --- */
+  const bat = new THREE.Group(); bat.name = 'batteryPack'; toolRoot.add(bat);
+  const bs = new THREE.Shape(); // side profile with the sloped front where the release button sits
+  bs.moveTo(-4.05, -14.3); bs.lineTo(4.55, -14.3); bs.lineTo(5.85, -16.05); bs.lineTo(5.85, -16.3); bs.lineTo(-4.05, -16.3); bs.closePath();
+  const bupG = new THREE.ExtrudeGeometry(bs, { depth: 6.8, bevelEnabled: true, bevelThickness: .4, bevelSize: .4, bevelSegments: 4, curveSegments: 8 });
+  bupG.translate(0, 0, -3.4);
+  bat.add(mesh(bupG, MAT.yellow(), 'battery'));
+  bat.add(at(mesh(new RoundedBoxGeometry(10.8, 3.25, 7.8, 4, 0.55), MAT.rubber(), 'battery'), 0.9, -17.575, 0));
+  bat.add(at(mesh(new THREE.BoxGeometry(7.5, 0.9, 4.6), MAT.black()), 0.25, -13.45, 0));
+  const release = new THREE.Group(); release.name = 'releaseButton'; bat.add(release);
+  const rm = MAT.black();
+  release.add(mesh(new RoundedBoxGeometry(0.5, 1.2, 4.4, 2, 0.15), rm, 'release'));
+  for (let i = 0; i < 4; i++) { const r = mesh(new THREE.BoxGeometry(0.08, 0.1, 3.9), rm); r.position.set(0.26, 0.39 - i * 0.26, 0); release.add(r); }
+  release.rotation.z = 36.6 * D2R;
+  const gbtn = mesh(new RoundedBoxGeometry(0.26, 0.5, 0.75, 2, 0.1), MAT.dark(), 'gauge'); gbtn.position.set(6.32, -16.95, -1.75); bat.add(gbtn);
+  const gaugeFrame = mesh(new THREE.PlaneGeometry(3.0, 0.62), tag(new THREE.MeshStandardMaterial({ color: 0x0c0d0e, roughness: .4 }), 'gauge'), null, false);
+  orient(gaugeFrame, [6.305, -16.95, 0.25], [1, 0, 0], [0, 1, 0]); bat.add(gaugeFrame);
+  const leds = [];
+  for (let i = 0; i < 3; i++) {
+    const m = new THREE.MeshStandardMaterial({ color: 0x0f3a1c, emissive: 0x18d14e, emissiveIntensity: 0, roughness: .3 });
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.72, 0.28), m); orient(p, [6.312, -16.95, -0.65 + i * 0.95], [1, 0, 0], [0, 1, 0]); bat.add(p); leds.push(m);
+  }
+  const batTex = canvasTex(1024, 160, (g, w, h) => {
+    g.textBaseline = 'middle'; g.fillStyle = '#f4b000'; g.font = `800 112px ${FONT}`; g.fillText('20V', 34, 88);
+    const x = 34 + g.measureText('20V').width + 14; g.fillStyle = '#fff'; g.font = `800 46px ${FONT}`; g.fillText('MAX', x, 62);
+    g.textAlign = 'right'; g.font = `800 112px ${FONT}`; g.fillText('5Ah', w - 34, 88);
+  });
+  for (const s of [-1, 1]) bat.add(orient(decal(batTex, 8.4, 1.31), [0.9, -17.8, s * 3.912], [0, 0, s], [0, 1, 0]));
+
+  /* --- belt hook (14) + screw (13) on the left side, bit clip (15) + screw on the right --- */
+  const hook = new THREE.Group(); hook.name = 'beltHook'; toolRoot.add(hook);
+  const hm = MAT.steel();
+  hook.add(at(mesh(new THREE.BoxGeometry(2.2, 1.3, 0.14), hm, 'hook'), -1.2, -13.0, -3.83));
+  hook.add(at(mesh(new THREE.BoxGeometry(2.2, 0.14, 0.62), hm, 'hook'), -1.2, -13.65, -4.07));
+  hook.add(at(mesh(new RoundedBoxGeometry(2.2, 3.6, 0.14, 2, 0.06), hm, 'hook'), -1.2, -15.45, -4.36));
+  const makeScrew = (part, dir) => {
+    const g = new THREE.Group(); const m = MAT.steel();
+    const head = mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.2, 24).rotateX(Math.PI / 2), m, part); g.add(head);
+    const sh = mesh(new THREE.CylinderGeometry(0.14, 0.14, 1.1, 12).rotateX(Math.PI / 2), m, part); sh.position.z = 0.65 * dir; g.add(sh);
+    const xm = MAT.slot();
+    for (const [w, h] of [[0.42, 0.08], [0.08, 0.42]]) { const c = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.04), xm); c.position.z = -0.1 * dir; g.add(c); }
+    return g;
+  };
+  const screwA = makeScrew('screwA', 1); screwA.name = 'screw13'; toolRoot.add(screwA);
+  const clip = new THREE.Group(); clip.name = 'bitClip'; toolRoot.add(clip);
+  const clm = MAT.black();
+  clip.add(at(mesh(new RoundedBoxGeometry(1.7, 2.1, 0.75, 2, 0.15), clm, 'clip'), -1.2, -13.5, 4.2));
+  for (const y of [-13.85, -14.25]) clip.add(at(mesh(new THREE.BoxGeometry(1.3, 0.16, 0.06), MAT.slot()), -1.2, y, 4.58));
+  const screwB = makeScrew('screwB', -1); screwB.name = 'screw13b'; toolRoot.add(screwB);
+
+  return { knob, collar, spindle, sleeve, jaws, bitHolder, bits, trigger, fwdrev, lensM, spot, cone, coneM, bat, release, gbtn, leds, hook, screwA, clip, screwB };
+}
+
+class Helix extends THREE.Curve {
+  constructor(R, len, pitch, phase, x0) { super(); Object.assign(this, { R, len, pitch, phase, x0 }); }
+  getPoint(u, tg = new V3()) { const x = this.x0 + u * this.len; const a = this.phase + (u * this.len / this.pitch) * TAU; return tg.set(x, this.R * Math.cos(a), this.R * Math.sin(a)); }
+}
+function makeTwistBit(L = 10, r = 0.4) {
+  const g = new THREE.Group(); g.name = 'twistDrillBit'; const m = MAT.steel(); tag(m, 'bit');
+  const shL = 3.6; const sh = new THREE.Mesh(cylX(r, r, shL, 24), m); sh.position.x = shL / 2; g.add(sh);
+  const fl = L - shL - 0.6;
+  const core = new THREE.Mesh(cylX(r * .45, r * .45, fl, 16), m); core.position.x = shL + fl / 2; g.add(core);
+  for (const ph of [0, Math.PI]) g.add(new THREE.Mesh(new THREE.TubeGeometry(new Helix(r * .6, fl, 1.6, ph, shL), 140, r * .42, 8, false), m));
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(r, 0.6, 24).rotateZ(-Math.PI / 2), m); tip.position.x = L - 0.3; g.add(tip);
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+function makeMasonryBit(L = 12, r = 0.4) {
+  const g = new THREE.Group(); g.name = 'masonryBit'; const m = MAT.steel(); tag(m, 'bit');
+  const shL = 4.0; const sh = new THREE.Mesh(cylX(r, r, shL, 24), m); sh.position.x = shL / 2; g.add(sh);
+  const fl = L - shL - 0.7;
+  const core = new THREE.Mesh(cylX(r * .5, r * .5, fl, 16), m); core.position.x = shL + fl / 2; g.add(core);
+  for (const ph of [0, Math.PI]) g.add(new THREE.Mesh(new THREE.TubeGeometry(new Helix(r * .62, fl, 2.6, ph, shL), 120, r * .36, 8, false), m));
+  const cm = new THREE.MeshStandardMaterial({ color: 0x4a4d52, metalness: .6, roughness: .45 }); tag(cm, 'bit');
+  const wedge = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.06, 0.26), cm); wedge.position.x = L - 0.55; g.add(wedge);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.45, 4).rotateZ(-Math.PI / 2), cm); tip.position.x = L - 0.1; tip.scale.set(1, 1, 0.3); g.add(tip);
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+function makeDriverBit() {
+  const g = new THREE.Group(); g.name = 'screwdriverBit'; const m = MAT.steel(); tag(m, 'bit');
+  const sh = new THREE.Mesh(cylX(0.36, 0.36, 3.6, 6), m); sh.position.x = 1.8; g.add(sh);
+  const nk = new THREE.Mesh(cylX(0.36, 0.22, 0.7, 16), m); nk.position.x = 3.95; g.add(nk);
+  const tp = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.7, 16).rotateZ(-Math.PI / 2), m); tp.position.x = 4.65; g.add(tp);
+  for (const [a, b] of [[0.62, 0.07], [0.07, 0.62]]) { const f = new THREE.Mesh(new THREE.BoxGeometry(0.55, a, b), m); f.position.x = 4.55; g.add(f); }
+  g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  return g;
+}
+
+/* ================================================================
+   hands (Fig. F): right hand on the main handle, left under the battery
+   ================================================================ */
+const gripF = [[1.9, -2.8], [2.05, -6.1], [1.35, -6.75], [0.92, -7.6], [0.8, -8.6], [0.45, -9.8], [0.05, -11.0], [-0.02, -12.0], [0.2, -12.9]];
+const gripB = [[-3.2, -2.8], [-2.6, -3.6], [-2.15, -4.9], [-2.2, -6.1], [-2.5, -7.3], [-2.8, -8.6], [-2.95, -9.9], [-2.9, -11.5], [-2.95, -12.9]];
+function edgeX(pts, y) { for (let i = 0; i < pts.length - 1; i++) { const [x0, y0] = pts[i], [x1, y1] = pts[i + 1]; if (y <= y0 && y >= y1) return x0 + (x1 - x0) * (y - y0) / (y1 - y0); } return pts[pts.length - 1][0]; }
+function buildHands() {
+  const skinR = MAT.skin(), skinL = MAT.skin();
+  const handR = new THREE.Group(); handR.name = 'rightHand'; toolRoot.add(handR);
+  for (const [y, tube] of [[-7.15, .72], [-8.5, .7], [-9.8, .63]]) {
+    const f = edgeX(gripF, y) + .35, b = edgeX(gripB, y) - .35, c = (f + b) / 2, a = (f - b) / 2;
+    const Rz = 1.8 + tube * .92;
+    const g = new THREE.TorusGeometry(Rz, tube, 10, 30, Math.PI + 0.55);
+    g.rotateZ(-Math.PI / 2 - 0.27); g.rotateX(-Math.PI / 2); g.scale((a + tube * .92) / Rz, 1, 1);
+    const m = new THREE.Mesh(g, skinR); m.position.set(c, y, 0); m.castShadow = true; handR.add(m);
+  }
+  const index = new THREE.Group(); handR.add(index);
+  index.add(capsuleBetween([0.9, -5.3, 2.2], [3.1, -5.35, 1.7], .6, skinR));
+  index.add(capsuleBetween([3.1, -5.35, 1.7], [4.35, -5.4, 0.55], .57, skinR));
+  index.add(capsuleBetween([4.35, -5.4, 0.55], [4.0, -5.45, -0.4], .54, skinR));
+  const tilt = -9 * D2R;
+  const palm = new THREE.Mesh(new RoundedBoxGeometry(4.3, 6.4, 1.5, 3, 0.6), skinR); palm.position.set(-1.2, -8.4, 2.55); palm.rotation.z = tilt; palm.castShadow = true; handR.add(palm);
+  const heel = new THREE.Mesh(new RoundedBoxGeometry(1.6, 6.0, 3.8, 3, 0.6), skinR); heel.position.set(-3.85, -8.6, 0.8); heel.rotation.z = tilt; heel.castShadow = true; handR.add(heel);
+  handR.add(capsuleBetween([-3.9, -4.6, 1.2], [-3.3, -4.35, -1.85], .66, skinR));
+  handR.add(capsuleBetween([-3.3, -4.35, -1.85], [-0.9, -4.3, -2.6], .6, skinR));
+  handR.add(capsuleBetween([-0.9, -4.3, -2.6], [0.5, -4.45, -2.62], .56, skinR));
+  handR.add(capsuleBetween([-4.3, -9.4, 1.4], [-14.5, -15, 4.8], 2.3, skinR));
+
+  const handL = new THREE.Group(); handL.name = 'leftHand'; toolRoot.add(handL);
+  const lp = new THREE.Mesh(new RoundedBoxGeometry(6.8, 1.4, 6.4, 3, 0.6), skinL); lp.position.set(0.9, -19.95, 0); lp.castShadow = true; handL.add(lp);
+  for (const x of [3.6, 2.0, 0.4, -1.2]) {
+    handL.add(capsuleBetween([x, -19.8, 3.0], [x, -18.9, 4.45], .62, skinL));
+    handL.add(capsuleBetween([x, -18.9, 4.45], [x - 0.1, -17.4, 4.52], .58, skinL));
+  }
+  handL.add(capsuleBetween([3.4, -19.7, -2.9], [4.4, -18.3, -4.5], .66, skinL));
+  handL.add(capsuleBetween([-2.3, -20.3, -1.8], [-12.5, -24.7, -9.5], 2.2, skinL));
+  return { handR, handL, index, skinR, skinL };
+}
+
+/* ================================================================
+   workpieces, brush, particles, arrows
+   ================================================================ */
+function buildWorld() {
+  const woodTex = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = '#c99e68'; g.fillRect(0, 0, w, h);
+    const r = mulberry32(3);
+    for (let i = 0; i < 70; i++) {
+      g.strokeStyle = `rgba(${110 + r() * 40},${70 + r() * 25},${30 + r() * 20},${.18 + r() * .25})`; g.lineWidth = 1 + r() * 3;
+      const y0 = r() * h, a = 4 + r() * 10, f = 0.004 + r() * 0.01, p = r() * 6;
+      g.beginPath(); for (let x = 0; x <= w; x += 8) { const y = y0 + Math.sin(x * f + p) * a; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+    }
+  });
+  woodTex.wrapS = woodTex.wrapT = THREE.RepeatWrapping;
+  const board = new THREE.Mesh(new THREE.BoxGeometry(4, 42, 32), new THREE.MeshStandardMaterial({ map: woodTex, roughness: .78 }));
+  board.castShadow = true; board.receiveShadow = true; board.visible = false; scene.add(board);
+  const conTex = canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = '#a7a8a4'; g.fillRect(0, 0, w, h); const r = mulberry32(9);
+    for (let i = 0; i < 5000; i++) { const v = 110 + r() * 90 | 0; g.fillStyle = `rgba(${v},${v},${v - 6},${.35 + r() * .4})`; const s = 1 + r() * 3; g.fillRect(r() * w, r() * h, s, s); }
+    for (let i = 0; i < 60; i++) { g.fillStyle = 'rgba(70,70,68,.5)'; g.beginPath(); g.arc(r() * w, r() * h, 1 + r() * 3, 0, TAU); g.fill(); }
+  });
+  const concrete = new THREE.Mesh(new THREE.BoxGeometry(15, 46, 34), new THREE.MeshStandardMaterial({ map: conTex, roughness: .95 }));
+  concrete.castShadow = true; concrete.receiveShadow = true; concrete.visible = false; scene.add(concrete);
+  const hole = new THREE.Mesh(new THREE.CircleGeometry(1, 32), new THREE.MeshBasicMaterial({ color: 0x1b130c }));
+  hole.rotation.y = -Math.PI / 2; hole.visible = false; scene.add(hole);
+  const crater = new THREE.Mesh(new THREE.RingGeometry(1, 1.9, 32), new THREE.MeshStandardMaterial({ color: 0x7d7c78, roughness: 1, transparent: true, opacity: .8 }));
+  crater.rotation.y = -Math.PI / 2; crater.visible = false; scene.add(crater);
+
+  const screw = new THREE.Group(); screw.name = 'woodScrew'; scene.add(screw);
+  const gm = new THREE.MeshStandardMaterial({ color: 0xc9a54a, metalness: .85, roughness: .32 });
+  const head = new THREE.Mesh(cylX(0.55, 0.2, 0.35, 28), gm); head.position.x = 0.175; screw.add(head);
+  const sh = new THREE.Mesh(cylX(0.2, 0.2, 3.75, 16), gm); sh.position.x = 0.35 + 1.875; screw.add(sh);
+  const tp = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 16).rotateZ(-Math.PI / 2), gm); tp.position.x = 4.3; screw.add(tp);
+  screw.add(new THREE.Mesh(new THREE.TubeGeometry(new Helix(0.24, 3.6, 0.3, 0, 0.6), 160, 0.07, 6, false), gm));
+  const xm = new THREE.MeshBasicMaterial({ color: 0x3a2e10 });
+  for (const [a, b] of [[0.62, 0.1], [0.1, 0.62]]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.04, a, b), xm); c.position.x = -0.01; screw.add(c); }
+  screw.traverse(o => { if (o.isMesh) o.castShadow = true; }); screw.visible = false;
+
+  const brush = new THREE.Group(); brush.name = 'brush'; toolRoot.add(brush);
+  const bh = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.45, 9, 16), new THREE.MeshStandardMaterial({ color: 0xb98a55, roughness: .6 }));
+  bh.rotation.x = Math.PI / 2; bh.position.z = -5.4; brush.add(bh);
+  const bb = new THREE.Mesh(new RoundedBoxGeometry(2.6, 1.0, 0.9, 2, 0.2), new THREE.MeshStandardMaterial({ color: 0x8c6236, roughness: .6 })); bb.position.z = -0.75; brush.add(bb);
+  const br = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.85, 0.8), new THREE.MeshStandardMaterial({ color: 0x3b3a38, roughness: 1 })); br.position.z = 0.05; brush.add(br);
+  brush.traverse(o => { if (o.isMesh) o.castShadow = true; }); brush.visible = false;
+
+  const PN = 150;
+  const pMat = new THREE.MeshStandardMaterial({ color: 0xc8955a, roughness: .85 });
+  const pMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(0.28, 0.28, 0.28), pMat, PN);
+  pMesh.frustumCulled = false; scene.add(pMesh);
+  const rnd = mulberry32(7); const PR = Array.from({ length: PN }, () => [rnd(), rnd(), rnd(), rnd(), rnd()]);
+  return { board, concrete, hole, crater, screw, brush, pMesh, pMat, PN, PR };
+}
+
+const arrowMats = [];
+function arrowMat() { const m = new THREE.MeshBasicMaterial({ color: 0x2a6dff, transparent: true, opacity: 0, depthTest: false, depthWrite: false }); arrowMats.push(m); return m; }
+function straightArrow(len, r = 0.17) {
+  const g = new THREE.Group(); const m = arrowMat(); const hl = 0.9;
+  const s = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len - hl, 12), m); s.position.y = (len - hl) / 2;
+  const h = new THREE.Mesh(new THREE.ConeGeometry(r * 3.1, hl, 18), m); h.position.y = len - hl / 2;
+  g.add(s, h); g.userData.mat = m; g.traverse(o => o.renderOrder = 30); return g;
+}
+class ArcCurve extends THREE.Curve { constructor(R, A) { super(); this.R = R; this.A = A; } getPoint(u, tg = new V3()) { return tg.set(0, this.R * Math.cos(u * this.A), this.R * Math.sin(u * this.A)); } }
+function curvedArrow(R, deg, r = 0.15) {
+  const g = new THREE.Group(); const m = arrowMat(); const A = deg * D2R;
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(new ArcCurve(R, A), 64, r, 8, false), m));
+  const h = new THREE.Mesh(new THREE.ConeGeometry(r * 3.3, 0.85, 18), m);
+  h.position.set(0, R * Math.cos(A), R * Math.sin(A));
+  h.quaternion.setFromUnitVectors(new V3(0, 1, 0), new V3(0, -Math.sin(A), Math.cos(A)));
+  g.add(h); g.userData.mat = m; g.traverse(o => o.renderOrder = 30); return g;
+}
+function placed(g, from, dir) { g.position.set(...from); g.quaternion.setFromUnitVectors(new V3(0, 1, 0), new V3(...dir).normalize()); return g; }
+
+/* ================================================================
+   build everything
+   ================================================================ */
+const T = buildTool();
+const H = buildHands();
+const W = buildWorld();
+const ARROWS = {
+  batIn: placed(straightArrow(5), [9.5, -15.6, -5.2], [-1, 0, 0]),
+  batOut: placed(straightArrow(5), [3.0, -15.6, -5.2], [1, 0, 0]),
+  press: placed(straightArrow(2.6), [8.32, -12.83, 0], [-0.8, -0.6, 0]),
+  gauge: placed(straightArrow(2.6), [8.9, -16.95, -1.75], [-1, 0, 0]),
+  sleeve: placed(curvedArrow(2.6, 250), [7.45, 0, 0], [0, 1, 0]),
+  insert: placed(straightArrow(4), [27.5, 1.3, 0], [-1, 0, 0]),
+  collar: placed(curvedArrow(3.0, 210), [4.6, 0, 0], [0, 1, 0]),
+  speedBack: placed(straightArrow(2.4), [-0.25, 3.75, -1.25], [-1, 0, 0]),
+  speedFwd: placed(straightArrow(2.4), [-2.65, 3.75, -1.25], [1, 0, 0]),
+  pushR: placed(straightArrow(2.8), [1.8, -3.2, 6.0], [0, 0, -1]),
+  pushL: placed(straightArrow(2.8), [1.8, -3.2, -6.0], [0, 0, 1]),
+  spin: placed(curvedArrow(1.5, 260), [12.5, 0, 0], [0, 1, 0]),
+  hookIn: placed(straightArrow(3), [-1.2, -15.6, -9.0], [0, 0, 1]),
+  screwIn: placed(straightArrow(2.6), [-1.2, -13.0, -10.5], [0, 0, 1]),
+  clipIn: placed(straightArrow(3), [-1.2, -13.5, 9.6], [0, 0, -1]),
+};
+Object.values(ARROWS).forEach(a => toolRoot.add(a));
+// curved arrows were placed with dir (0,1,0) -> identity rotation; their arc is around +X
+[ARROWS.sleeve, ARROWS.collar, ARROWS.spin].forEach(a => a.quaternion.identity());
+
+/* ---------- callouts (numbers follow the manual's 구성품 list) ---------- */
+const CALLOUTS = {
+  1: { name: '배터리 팩', p: 'bat', a: [1, -18.0, -3.92], l: [3, -24.5, -8] },
+  2: { name: '배터리 팩 해제 버튼', p: 'bat', a: [5.7, -14.8, -1.2], l: [12.5, -12.5, -6] },
+  3: { name: '메인 핸들', p: 'tool', a: [-1.2, -9.5, -1.82], l: [-9.5, -10, -6] },
+  4: { name: '가변 속도 트리거 스위치', p: 'tool', a: [3.6, -5.3, -0.5], l: [11, -7.5, -6] },
+  5: { name: '정방향/역방향 제어·잠금 버튼', p: 'tool', a: [1.8, -3.2, -2.45], l: [-6.5, -3.4, -8] },
+  6: { name: '모드 선택 칼라', p: 'tool', a: [4.6, 1.3, -2.06], l: [4, 8.8, -6] },
+  7: { name: '속도 선택기', p: 'tool', a: [-1.45, 3.6, 0], l: [-5, 8.8, -4] },
+  8: { name: '작업등', p: 'tool', a: [3.8, -12.3, -0.4], l: [11.5, -10.5, -6] },
+  9: { name: '키리스 척', p: 'tool', a: [11.3, 0.4, -0.3], l: [17, 2.6, -5] },
+  10: { name: '척 슬리브', p: 'tool', a: [7.4, 1.2, -1.6], l: [11.5, 6.6, -6] },
+  11: { name: '날짜 코드 위치', p: 'tool', a: [-3.87, -13.12, 0], l: [-10.5, -14.5, -5] },
+  12: { name: '연료 게이지 버튼', p: 'bat', a: [6.4, -16.95, -1.75], l: [12.5, -21, -6] },
+  13: { name: '나사', p: 'hook', a: [-1.2, -13.0, -4.1], l: [-8, -10, -9] },
+  14: { name: '벨트 후크', p: 'hook', a: [-1.2, -16.2, -4.45], l: [-7, -20.5, -9] },
+  15: { name: '비트 클립', p: 'clip', a: [-1.2, -13.5, 4.6], l: [-8, -17, 9] },
+  16: { name: '드릴 비트', p: 'tool', a: [16, 0.42, -0.2], l: [18, 5.5, -5] },
+  hot: { name: '작동 후 비트가 뜨거움 · 장갑 착용', note: true, p: 'tool', a: [17.5, 0.42, -0.2], l: [17, 7.5, -6] },
+  bat0: { name: '조정·교체 전 배터리 분리', note: true, p: 'bat', a: [0.9, -15.0, -3.82], l: [2, -23, -9] },
+  vent: { name: '통풍구 · 손·옷·머리카락 접근 금지', note: true, p: 'tool', a: [-4.05, 0.6, -2.62], l: [-10.5, 6.5, -7] },
+};
+const PARENTS = { tool: toolRoot, bat: T.bat, hook: T.hook, clip: T.clip };
+const lineMats = [];
+for (const [id, c] of Object.entries(CALLOUTS)) {
+  const el = document.createElement('div'); el.className = 'co' + (c.note ? ' note' : '');
+  el.innerHTML = `<b>${c.note ? '!' : id}</b><span>${c.name}</span>`;
+  const obj = new CSS2DObject(el); obj.position.set(...c.l); obj.visible = false;
+  const lm = new THREE.LineBasicMaterial({ color: 0x6d737a, transparent: true, opacity: 0, depthTest: false }); lineMats.push(lm);
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new V3(...c.a), new V3(...c.l)]), lm);
+  line.renderOrder = 25; line.visible = false;
+  PARENTS[c.p].add(obj, line);
+  c.obj = obj; c.el = el; c.line = line; c.lm = lm;
+}
+const bubbleEl = document.createElement('div'); bubbleEl.className = 'bubble';
+const bubble = new CSS2DObject(bubbleEl); bubble.visible = false; toolRoot.add(bubble);
+
+/* ================================================================
+   STEPS — text follows the Korean section of the manual (pp. 10–15)
+   ================================================================ */
+const held = S => { S.tool.y = 30; S.hands.r = 1; S.hands.l = 1; };
+function click(S, t, at, p, text = '딸깍!') { if (t >= at && t < at + 1.0) S.bubble = { text, p, k: win(t, at, at + 1.0, .12) }; }
+const lab = (...ids) => ids.map(x => Array.isArray(x) ? { id: x[0], k: x[1] } : { id: x, k: 1 }).filter(o => o.k > 0);
+
+const STEPS = [
+  {
+    id: 'parts', title: '구성품 살펴보기', fig: '그림 A', dur: 16, hud: [],
+    intro: '공구 각 부분의 이름과 위치를 확인합니다. 번호는 설명서의 구성품 번호와 같습니다.',
+    caps: [[0, '배터리 팩 ①, 배터리 팩 해제 버튼 ②'], [3, '메인 핸들 ③, 가변 속도 트리거 스위치 ④, 정방향/역방향 제어·잠금 해제 버튼 ⑤'], [6.5, '모드 선택 칼라 ⑥, 속도 선택기 ⑦, 작업등 ⑧'], [10, '키리스 척 ⑨, 척 슬리브 ⑩, 날짜 코드 위치 ⑪, 연료 게이지 버튼 ⑫'], [13, '운송 중에 부품이나 액세서리가 손상되지 않았는지 확인하십시오.']],
+    warn: '전동 공구나 그 부품은 절대 개조하지 마십시오. 제품이 파손되거나 부상을 당할 수 있습니다.',
+    note: '생산 날짜 코드 ⑪은 4자리 연도와 2자리 주, 2자리 공장 코드로 구성됩니다.',
+    cam: [{ t: 0, tg: [2.5, 10.5, 0], az: 150, el: 13, d: 70 }, { t: 8, tg: [2.5, 10.5, 0], az: 196, el: 9, d: 68 }, { t: 16, tg: [2.5, 10.5, 0], az: 150, el: 13, d: 70 }],
+    apply(t, S) {
+      const order = [[1, .4], [2, 1], [3, 3], [4, 3.6], [5, 4.2], [6, 6.5], [7, 7.1], [8, 7.7], [9, 10], [10, 10.6], [11, 11.2], [12, 11.8]];
+      S.labels = order.map(([n, a]) => ({ id: n, k: lin(t, a, a + .35) })).filter(o => o.k > 0);
+      const grp = t < 3 ? ['battery', 'release'] : t < 6.5 ? ['grip', 'trigger', 'fwdrev'] : t < 10 ? ['collar', 'speedsel', 'led'] : t < 13 ? ['nose', 'sleeve', 'date', 'gauge'] : [];
+      grp.forEach(k => S.hl[k] = 1);
+    }
+  },
+  {
+    id: 'safety', title: '작업 전 안전 확인', fig: '안전 지침', dur: 12, hud: [],
+    intro: '사용 설명서의 안전 지침 가운데 이 공구에 해당하는 핵심 내용입니다.',
+    caps: [[0, '고글이나 보안경을 착용하십시오. 해머링·드릴링 중에 칩이 날아갑니다. 드릴 비트와 공구는 작동 중에 뜨거워지므로 만질 때 장갑을 끼십시오.'], [4.4, '조정하거나 부착물·액세서리를 설치·제거하기 전에는 공구를 끄고 배터리 팩을 분리하십시오.'], [8.4, '통풍구는 움직이는 부분을 덮고 있으므로 손을 대지 말고, 헐렁한 옷·장신구·긴 머리가 끼지 않게 하십시오.'], [10.4, '클램프 등으로 공작물을 안정된 받침대에 고정하십시오. 손이나 몸에 대면 통제력을 잃을 수 있습니다.']],
+    warn: '젖은 곳이나 가연성 액체·가스가 있는 곳에서는 사용하지 마십시오. 어린이가 공구를 만지지 않게 하십시오.',
+    cam: [{ t: 0, tg: [6, 15, 0], az: 148, el: 12, d: 72 }, { t: 7.6, tg: [5, 13, 0], az: 160, el: 10, d: 74 }, { t: 9, tg: [-3, 23.5, -1], az: 222, el: 16, d: 42 }, { t: 12, tg: [-3, 23.5, -1], az: 232, el: 18, d: 40 }],
+    apply(t, S) {
+      S.tool.y = 24; S.bit.type = 'twist';
+      S.labels = lab(['hot', win(t, .4, 4.4)], ['bat0', win(t, 4.4, 8.4)], ['vent', lin(t, 8.4, 8.8)]);
+      if (t < 4.4) S.hl.bit = 1; else if (t < 8.4) S.hl.battery = 1; else S.hl.vent = 1;
+      S.bat.dx = 13 * seg(t, 5, 6.6); S.bat.dy = -4.6 * seg(t, 6.6, 7.3);
+      S.arrows.batOut = win(t, 4.8, 6.8);
+    }
+  },
+  {
+    id: 'bat-in', title: '배터리 팩 장착', fig: '그림 B', dur: 9.5, hud: [],
+    intro: '배터리 팩을 공구 손잡이 아래 레일에 끼웁니다.',
+    caps: [[0, '배터리 팩이 완전히 충전되었는지 확인합니다.'], [1, '1. 배터리 팩을 공구 손잡이 안쪽의 레일에 맞춥니다.'], [2.6, '2. 공구에 견고하게 장착될 때까지 핸들 쪽으로 밀어 넣습니다.'], [5.4, '딸깍하고 잠기는 소리가 들리는지 확인합니다.']],
+    warn: 'DeWALT 배터리와 충전기만 사용하십시오.',
+    cam: [{ t: 0, tg: [6, 13, 0], az: 140, el: 10, d: 66 }, { t: 9.5, tg: [4, 13, 0], az: 156, el: 12, d: 62 }],
+    apply(t, S) {
+      S.tool.y = 26;
+      S.bat.dx = lerp(13, 0, seg(t, 2.6, 5.4)); S.bat.dy = lerp(-4, 0, seg(t, .8, 2.2));
+      S.arrows.batIn = win(t, 2.3, 5.6);
+      if (t < 6.5) S.hl.battery = 1;
+      click(S, t, 5.4, [2, -14.3, -4.6]);
+      S.labels = lab(1, [2, lin(t, 6, 6.4)]);
+    }
+  },
+  {
+    id: 'bat-out', title: '배터리 팩 분리', fig: '그림 B', dur: 8.5, hud: [],
+    intro: '해제 버튼을 누른 채로 배터리 팩을 앞으로 빼냅니다.',
+    caps: [[0, '1. 배터리 분리 버튼 ②를 누릅니다.'], [1.7, '버튼을 누른 채로 배터리 팩을 앞쪽(척 방향)으로 밀어 공구에서 빼냅니다.'], [5, '2. 배터리 팩을 충전기에 삽입해 충전합니다.']],
+    warn: '배터리를 과도한 열(130 °C 이상)이나 화기에 노출하지 마십시오. 손상되었거나 변형된 배터리 팩은 사용하지 마십시오.',
+    cam: [{ t: 0, tg: [6, 13, 0], az: 138, el: 10, d: 64 }, { t: 8.5, tg: [7, 12, 0], az: 150, el: 12, d: 68 }],
+    apply(t, S) {
+      S.tool.y = 26;
+      S.release = win(t, .8, 2.8, .25); S.arrows.press = win(t, .4, 2.6);
+      S.bat.dx = 13 * seg(t, 1.7, 4.3); S.bat.dy = -4 * seg(t, 4.5, 5.6);
+      S.arrows.batOut = win(t, 1.6, 4.4);
+      if (t < 2.8) S.hl.release = 1; if (t >= 1.7 && t < 6) S.hl.battery = 1;
+      S.labels = lab([2, win(t, 0, 3.2)]);
+    }
+  },
+  {
+    id: 'gauge', title: '연료 게이지 확인', fig: '그림 B', dur: 9, hud: [],
+    intro: '배터리 팩 앞면의 연료 게이지로 남은 충전량을 확인합니다.',
+    caps: [[0, '연료 게이지 ⑫는 배터리 팩에 남은 충전 수준을 녹색 LED 3개로 보여줍니다.'], [1, '연료 게이지 버튼을 길게 누릅니다.'], [2.2, '켜지는 녹색 LED 3개의 조합으로 충전 잔량을 나타냅니다.'], [6.6, '잔량이 사용 가능한 한계보다 적으면 LED가 켜지지 않으므로 배터리를 재충전해야 합니다.']],
+    note: '잔량 표시는 배터리 팩에 남은 충전 레벨만 나타내며, 공구의 기능 상태를 나타내지는 않습니다.',
+    cam: [{ t: 0, tg: [6.6, 2.4, -0.6], az: 148, el: 16, d: 30 }, { t: 9, tg: [6.6, 2.2, -0.6], az: 136, el: 18, d: 27 }],
+    apply(t, S) {
+      S.gaugePress = win(t, 1, 6.4, .2); S.arrows.gauge = win(t, .5, 6.4);
+      for (let i = 0; i < 3; i++) S.gauge[i] = lin(t, 1.3 + i * .4, 1.45 + i * .4) * (1 - lin(t, 6.4, 6.55));
+      S.hl.gauge = 1; S.labels = lab(12);
+    }
+  },
+  {
+    id: 'hook', title: '벨트 후크·비트 클립 장착', fig: '그림 G', dur: 12, hud: [],
+    intro: '옵션 액세서리인 벨트 후크와 비트 클립을 공구 아래쪽 양옆에 고정합니다.',
+    caps: [[0, '벨트 후크 ⑭와 비트 클립 ⑮는 공구 양쪽 어디에나 부착할 수 있어 왼손·오른손잡이 모두 사용할 수 있습니다.'], [2.8, '제공된 나사 ⑬만 사용해 고정합니다.'], [4.2, '나사를 단단히 조입니다.'], [7, '비트 클립 ⑮도 반대쪽에 같은 방법으로 장착합니다. 필요 없으면 떼어 두어도 됩니다.']],
+    warn: '벨트 후크는 작업 벨트에 공구를 거는 용도로만 사용하십시오. 사람이나 물체에 묶거나, 머리 위에 매달거나, 후크에 물건을 걸지 마십시오.',
+    cam: [{ t: 0, tg: [-1.2, 5.6, -3.5], az: 218, el: 12, d: 36 }, { t: 6.4, tg: [-1.2, 5.6, -3.5], az: 208, el: 14, d: 34 }, { t: 7.6, tg: [-1.2, 5.8, 3.5], az: 328, el: 13, d: 36 }, { t: 12, tg: [-1.2, 5.8, 3.5], az: 336, el: 14, d: 34 }],
+    apply(t, S) {
+      S.hook.off = 1 - seg(t, .4, 2.6);
+      S.hook.screw = lerp(1, .15, seg(t, 2.8, 4.0)) - .15 * seg(t, 4.0, 6.3); S.hook.rot = -seg(t, 4.0, 6.3) * 3 * TAU;
+      S.clip.on = t > 6.6; S.clip.off = 1 - seg(t, 7.2, 8.8);
+      S.clip.screw = lerp(1, .15, seg(t, 8.9, 9.7)) - .15 * seg(t, 9.7, 11.2); S.clip.rot = seg(t, 9.7, 11.2) * 3 * TAU;
+      S.arrows.hookIn = win(t, .2, 2.8); S.arrows.screwIn = win(t, 2.6, 4.3); S.arrows.clipIn = win(t, 7, 9);
+      S.labels = lab([14, lin(t, 1, 1.4) * (1 - lin(t, 6.4, 6.8))], [13, lin(t, 3, 3.4) * (1 - lin(t, 6.4, 6.8))], [15, lin(t, 7.8, 8.2)]);
+      if (t < 4) S.hl.hook = 1; if (t > 2.8 && t < 6.3) S.hl.screwA = 1; if (t > 7 && t < 11.2) S.hl.clip = 1;
+    }
+  },
+  {
+    id: 'bit', title: '키리스 척에 비트 설치', fig: '그림 C', dur: 16, hud: [],
+    intro: '자동 스핀들 잠금 장치가 있어 한 손으로 척을 열고 닫을 수 있습니다.',
+    caps: [[0, '1. 공구를 끄고 배터리 팩을 분리합니다.'], [2.2, '2. 척의 검은색 슬리브를 잡고 시계 반대 방향으로 충분히 돌려 척을 엽니다.'], [5.5, '3. 드릴 비트 ⑯를 척 ⑨에 약 19 mm 삽입합니다.'], [8.5, '척 슬리브 ⑩를 시계 방향으로 돌려 조입니다. 거의 조여지면 딸깍 소리가 납니다.'], [11, '4. 클릭 소리가 멈추고 슬리브가 더 이상 돌지 않을 때까지 최대한 조입니다.'], [13, '5. 액세서리를 분리하려면 1단계와 2단계를 반복합니다.']],
+    warn: '척의 앞부분을 잡고 공구를 켜서 비트를 조이지 마십시오. 척이 손상되고 부상을 입을 수 있습니다. 작동 전에는 항상 비트가 단단히 고정되었는지 확인하십시오.',
+    cam: [{ t: 0, tg: [4, 15, 0], az: 150, el: 10, d: 66 }, { t: 2, tg: [9.5, 26.2, 0], az: 140, el: 14, d: 32 }, { t: 5.4, tg: [9.5, 26.2, 0], az: 140, el: 14, d: 32 }, { t: 6.4, tg: [15, 26.2, 0], az: 150, el: 12, d: 46 }, { t: 8.4, tg: [12, 26.2, 0], az: 145, el: 12, d: 38 }, { t: 9.6, tg: [9, 26.2, 0], az: 135, el: 16, d: 30 }, { t: 16, tg: [11, 26.2, 0], az: 150, el: 13, d: 38 }],
+    apply(t, S) {
+      S.tool.y = 26;
+      S.bat.dx = 13 * seg(t, .3, 1.4); S.bat.dy = -6.6 * seg(t, 1.4, 2.0); S.arrows.batOut = win(t, .2, 1.5);
+      const open = seg(t, 2.4, 5.2), close = seg(t, 8.6, 12.3);
+      S.sleeve = TAU * (-1.1 * open + 1.3 * close);
+      S.jaw = t < 8.6 ? lerp(.12, .62, open) : lerp(.62, .40, seg(t, 8.6, 10.4));
+      S.bit.type = t > 4.8 ? 'twist' : null; S.bit.ins = seg(t, 5.6, 8.2);
+      S.arrows.sleeve = win(t, 2.2, 5.4) + win(t, 8.5, 12.4); S.arrowDir.sleeve = t < 7 ? -1 : 1;
+      S.arrows.insert = win(t, 5.4, 8.3);
+      for (const at of [10.8, 11.4, 12.0]) click(S, t, at, [7.2, 3.4, -1.2]);
+      S.labels = lab([10, lin(t, 2.2, 2.6)], [9, lin(t, 2.6, 3)], [16, lin(t, 8.4, 8.8)]);
+      if ((t > 2.2 && t < 5.4) || (t > 8.5 && t < 12.4)) S.hl.sleeve = 1; if (t > 5.4 && t < 8.3) S.hl.bit = 1;
+    }
+  },
+  {
+    id: 'speed', title: '속도 선택', fig: '그림 A, E', dur: 11, hud: ['speed'],
+    intro: '두 가지 속도 설정으로 다양한 작업에 맞출 수 있습니다.',
+    caps: [[0, '속도를 바꾸기 전에 공구를 끄고 완전히 멈출 때까지 기다립니다.'], [1.6, '1. 속도 1(높은 토크): 속도 선택기 ⑦을 뒤로(척에서 멀리) 밉니다.'], [5.2, '2. 속도 2(고속): 속도 선택기를 앞으로(척 방향으로) 밉니다.'], [8, '3. 속도가 바뀌지 않으면 선택 스위치가 앞·뒤 끝까지 맞물렸는지 확인합니다.']],
+    warn: '공구가 작동하는 동안에는 속도를 변경하지 마십시오.',
+    cam: [{ t: 0, tg: [-1.3, 22.7, 0], az: -128, el: 50, d: 21 }, { t: 11, tg: [-1.3, 22.7, 0], az: -114, el: 54, d: 20 }],
+    apply(t, S) {
+      S.speed = t < 5 ? 1 - seg(t, 1.8, 3.2) : seg(t, 5.6, 7.0);
+      S.arrows.speedBack = win(t, 1.2, 3.6); S.arrows.speedFwd = win(t, 5.0, 7.4);
+      S.hl.speedsel = 1; S.labels = lab(7);
+    }
+  },
+  {
+    id: 'mode', title: '모드 선택', fig: '그림 A, D', dur: 14, hud: ['mode'],
+    intro: '모드 선택 칼라를 돌려 원하는 기호를 화살표 표시에 맞춥니다.',
+    caps: [[0, '모드 선택 칼라 ⑥으로 작업에 맞는 작동 모드를 고릅니다.'], [1, '드릴 기호 — 드릴링'], [4.6, '1–15 — 나사 조이기. 숫자가 높을수록 토크가 커집니다.'], [8.8, '망치 기호 — 해머드릴링 (DCD799)']],
+    warn: '모드 선택 칼라가 드릴이나 해머드릴 위치에 있으면 클러치가 작동하지 않습니다. 과부하가 걸리면 드릴이 멈춰 갑작스러운 비틀림이 생길 수 있습니다.',
+    cam: [{ t: 0, tg: [3.0, 21.8, 0], az: -150, el: 46, d: 24 }, { t: 14, tg: [3.0, 21.8, 0], az: -132, el: 50, d: 23 }],
+    apply(t, S) {
+      S.bit.type = 'twist';
+      S.collar = t < 4.6 ? lerp(4, 0, seg(t, .8, 3.0)) : t < 8.8 ? lerp(0, 8, seg(t, 4.6, 7.2)) : lerp(8, 16, seg(t, 8.8, 11.4));
+      S.arrows.collar = win(t, .6, 3.2) + win(t, 4.4, 7.4) + win(t, 8.6, 11.6); S.arrowDir.collar = t < 4 ? 1 : -1;
+      S.hl.collar = 1; S.labels = lab(6);
+    }
+  },
+  {
+    id: 'hands', title: '올바른 손 위치', fig: '그림 F', dur: 10, hud: [],
+    intro: '한 손은 메인 핸들, 다른 한 손은 배터리 팩을 잡습니다.',
+    caps: [[0, '한 손으로 메인 핸들 ③을 잡습니다.'], [2.4, '다른 한 손으로 배터리 팩 ①을 받칩니다.'], [5, '갑작스러운 반응에 대비해 항상 공구를 단단히 잡으십시오.']],
+    warn: '심각한 부상의 위험을 줄이려면 항상 그림과 같이 올바르게 손을 위치하십시오.',
+    cam: [{ t: 0, tg: [1, 20, 0], az: 128, el: 12, d: 78 }, { t: 10, tg: [1, 20, 0], az: 178, el: 10, d: 76 }],
+    apply(t, S) {
+      S.tool.y = 30; S.bit.type = 'twist';
+      S.hands.r = seg(t, .4, 1.8); S.hands.l = seg(t, 2.4, 3.8);
+      S.labels = lab([3, lin(t, .4, .8)], [1, lin(t, 2.4, 2.8)]);
+      if (t < 2.4) S.hl.grip = 1; else if (t < 4.6) S.hl.battery = 1;
+    }
+  },
+  {
+    id: 'trigger', title: '트리거와 회전 방향', fig: '그림 A', dur: 17, hud: ['dir', 'trig', 'speed'],
+    intro: '가변 속도 트리거 ④로 켜고 끄며, 정방향/역방향 버튼 ⑤로 회전 방향을 정합니다.',
+    caps: [[0, '정방향/역방향 제어 버튼 ⑤가 가운데에 있으면 공구가 꺼짐 위치에 잠깁니다.'], [3, '정회전(시계 방향): 트리거를 놓고 공구 오른쪽에서 버튼을 누릅니다.'], [5, '트리거 스위치 ④를 당기면 켜지고, 더 깊이 당길수록 속도가 빨라집니다.'], [9, '트리거를 완전히 놓으면 브레이크가 작동해 척이 멈춥니다.'], [10, '역회전(시계 반대 방향): 트리거를 놓고 공구 왼쪽에서 버튼을 누릅니다.'], [15, '방향을 바꾼 뒤 처음 작동할 때 나는 클릭 소리는 정상입니다.']],
+    warn: '회전 방향을 바꾸기 전에는 항상 모터가 완전히 멈출 때까지 기다리십시오. 버튼 위치를 바꿀 때는 트리거를 놓아야 합니다.',
+    note: '가변 속도 범위에서 계속 사용하면 트리거 스위치가 손상될 수 있으므로 피하십시오.',
+    cam: [{ t: 0, tg: [2, 27, 0], az: 205, el: 18, d: 46 }, { t: 2.6, tg: [2, 27, 0], az: 205, el: 18, d: 46 }, { t: 3.6, tg: [2, 27, 0], az: 58, el: 24, d: 46 }, { t: 4.9, tg: [2, 27, 0], az: 58, el: 24, d: 46 }, { t: 6, tg: [6, 26, 0], az: 140, el: 14, d: 66 }, { t: 9.6, tg: [6, 26, 0], az: 150, el: 14, d: 66 }, { t: 10.4, tg: [2, 27, 0], az: 128, el: 22, d: 46 }, { t: 11.6, tg: [2, 27, 0], az: 128, el: 22, d: 46 }, { t: 12.6, tg: [6, 26, 0], az: 150, el: 14, d: 66 }, { t: 17, tg: [6, 26, 0], az: 140, el: 14, d: 66 }],
+    apply(t, S) {
+      held(S); S.bit.type = 'twist'; S.collar = 0;
+      const trig = x => (x >= 5.4 && x < 9.15 ? (x < 7.2 ? .35 * seg(x, 5.4, 6.2) : lerp(.35, 1, seg(x, 7.2, 7.9))) * (1 - lin(x, 9.0, 9.15)) : 0)
+        + (x >= 12.4 && x < 14.8 ? seg(x, 12.4, 13.1) * (1 - lin(x, 14.6, 14.75)) : 0);
+      const dir = x => x < 3.6 ? 0 : x < 10.5 ? seg(x, 3.6, 4.2) : lerp(1, -1, seg(x, 10.5, 11.1));
+      S.trigger = trig(t); S.dir = dir(t);
+      S.spin = integ(x => dir(x) * trig(x) * 20, t);
+      S.arrows.pushR = win(t, 3.1, 4.6); S.arrows.pushL = win(t, 10.0, 11.4);
+      S.arrows.spin = clamp(S.trigger * 5); S.arrowDir.spin = S.dir >= 0 ? 1 : -1;
+      if (t > 1.2 && t < 2.6) S.bubble = { text: '잠금 — 트리거가 눌리지 않음', p: [2.05, -1.8, -3], k: win(t, 1.2, 2.6, .15) };
+      click(S, t, 9.1, [11, 2.6, 0], '브레이크 — 척 정지');
+      click(S, t, 12.5, [11, 2.6, 0], '딸깍 — 정상');
+      S.labels = lab([5, win(t, 0, 5) + win(t, 10, 12)], [4, win(t, 5, 9.6) + win(t, 12, 15)]);
+      if (t < 4.6 || (t > 10 && t < 11.4)) S.hl.fwdrev = 1; if ((t > 5 && t < 9.2) || (t > 12.2 && t < 14.8)) S.hl.trigger = 1;
+    }
+  },
+  {
+    id: 'led', title: '작업등', fig: '그림 A', dur: 10, hud: ['led'],
+    intro: '작업등은 작업 표면을 바로 비추기 위한 조명입니다.',
+    caps: [[0, '작업등 ⑧은 트리거 스위치 ④를 누르면 켜집니다.'], [3.4, '트리거를 누르고 있는 동안 계속 켜져 있고, 놓은 뒤 20초가 지나면 자동으로 꺼집니다. (화면은 빨리 감기)'], [8.3, '작업등은 작업 표면을 비추는 용도이며 손전등으로 쓸 수 없습니다.']],
+    cam: [{ t: 0, tg: [11, 24, 0], az: 205, el: 16, d: 74 }, { t: 10, tg: [11, 24, 0], az: 214, el: 18, d: 70 }],
+    apply(t, S) {
+      held(S); S.bit.type = 'twist'; S.work.type = 'board'; S.work.x = 24;
+      S.darken = lin(t, 0, 1) * (1 - lin(t, 9.2, 10));
+      const trig = x => .22 * win(x, 1.2, 3.4, .2);
+      S.trigger = trig(t); S.dir = 1; S.spin = integ(x => trig(x) * 20, t);
+      S.led = t < 1.3 ? 0 : t < 8 ? 1 : 1 - lin(t, 8, 8.3);
+      S.ledCount = t >= 3.4 && t < 8 ? Math.max(1, Math.ceil(20 * (1 - (t - 3.4) / 4.6))) : null;
+      S.labels = lab(8, [4, win(t, .8, 3.8)]); S.hl.led = 1; if (t > 1 && t < 3.4) S.hl.trigger = 1;
+    }
+  },
+  {
+    id: 'screw', title: '스크류 구동', fig: '작업 수행', dur: 15, hud: ['mode', 'speed', 'trig'],
+    intro: '작업 전: 속도 선택기를 설정하고 척에 알맞은 비트를 설치합니다. 공작물은 단단히 고정하십시오.',
+    caps: [[0, '1. 모드 선택 칼라 ⑥을 원하는 토크 숫자에 맞춥니다. 낮은 토크에서 시작해 점차 높이십시오.'], [3, '비트를 나사 머리에 일직선으로 맞춥니다.'], [4.6, '2. 비트와 일직선으로 압력을 가하면서 트리거 스위치를 당겨 원하는 깊이까지 조입니다.'], [10.2, '설정한 토크에 도달하면 클러치가 작동해 더 조이지 않습니다.'], [11.6, '폐자재나 공작물의 보이지 않는 부분에서 미리 연습해 칼라의 알맞은 위치를 찾으십시오.']],
+    note: '15단계 칼라의 숫자가 클수록 토크가 높아지고 더 큰 패스너를 구동할 수 있습니다.',
+    cam: [{ t: 0, tg: [3.2, 32.2, 0], az: -150, el: 40, d: 26 }, { t: 2.6, tg: [3.2, 32.2, 0], az: -140, el: 42, d: 26 }, { t: 3.6, tg: [10, 25, 0], az: 208, el: 12, d: 76 }, { t: 15, tg: [11, 25, 0], az: 216, el: 14, d: 72 }],
+    apply(t, S) {
+      held(S); S.bit.type = 'driver'; S.speed = 0; S.work.type = 'screw'; S.work.x = 20.5;
+      S.collar = lerp(0, 5, seg(t, .6, 2.6)); S.arrows.collar = win(t, .4, 2.8); S.arrowDir.collar = -1;
+      const adv = 4.3 * seg(t, 4.7, 10.2);
+      S.tool.x = t < 4.5 ? lerp(-4, 1.25, seg(t, 3.0, 4.4)) : t < 11.6 ? 1.25 + adv : lerp(5.55, 1.0, seg(t, 11.6, 13.2));
+      const trig = x => .75 * win(x, 4.5, 11.2, .3);
+      S.trigger = trig(t); S.dir = 1;
+      S.spin = integ(x => x < 10.2 ? trig(x) * 14 : 0, t);
+      S.work.screwAdv = adv; S.work.screwRot = S.spin;
+      S.vib = .35 * win(t, 10.2, 11.2, .1);
+      click(S, t, 10.2, [12, 2.8, 0], '클러치 작동 — 따르륵');
+      S.labels = lab([6, win(t, .2, 3)]);
+      if (t < 2.8) S.hl.collar = 1; if (t > 4.5 && t < 10.2) S.hl.trigger = 1;
+    }
+  },
+  {
+    id: 'drill', title: '드릴링', fig: '작업 수행', dur: 15, hud: ['mode', 'speed', 'trig'],
+    intro: '날카로운 드릴 비트만 사용합니다. 공작물은 단단히 고정하십시오.',
+    caps: [[0, '1. 모드 선택기 ⑥을 드릴 기호에 맞춥니다.'], [2.6, '2. 드릴 비트를 공작물에 접촉시킵니다.'], [4.2, '3. 비트와 일직선으로 압력을 가하며 원하는 깊이에 도달할 때까지 트리거 스위치를 당깁니다.'], [10, '4. 구멍에서 비트를 꺼낼 때는 모터를 계속 작동시켜 막힘을 방지합니다.'], [12.4, '얇거나 쪼개지기 쉬운 재료는 목재 백업 블록을 대고, 강철에 8–13 mm 구멍을 낼 때는 4–5 mm 예비 구멍을 먼저 뚫으십시오.']],
+    warn: '과부하로 갑작스러운 비틀림이 생기면 드릴이 멈출 수 있습니다. 항상 실속에 대비해 드릴을 단단히 잡으십시오. 드릴이 멈추면 트리거를 즉시 놓고 비트를 빼낸 뒤 원인을 확인하십시오.',
+    cam: [{ t: 0, tg: [3.2, 32.2, 0], az: -150, el: 40, d: 26 }, { t: 2.3, tg: [3.2, 32.2, 0], az: -140, el: 42, d: 26 }, { t: 3.4, tg: [10, 25, 0], az: 208, el: 12, d: 76 }, { t: 5.6, tg: [15, 28, 0], az: 222, el: 16, d: 52 }, { t: 15, tg: [12, 26, 0], az: 210, el: 14, d: 66 }],
+    apply(t, S) {
+      held(S); S.bit.type = 'twist'; S.speed = 1; S.work.type = 'board'; S.work.x = 20.5;
+      S.collar = lerp(4, 0, seg(t, .5, 2.3)); S.arrows.collar = win(t, .3, 2.5); S.arrowDir.collar = 1;
+      const depth = 2.6 * seg(t, 4.4, 9.8);
+      S.tool.x = t < 4.2 ? lerp(-4, .75, seg(t, 2.6, 4.1)) : t < 10 ? .75 + depth : lerp(3.35, -3, seg(t, 10, 12.2));
+      const trig = x => win(x, 4.2, 12.4, .3);
+      S.trigger = trig(t); S.dir = 1; S.spin = integ(x => trig(x) * 20, t);
+      S.work.hole = .42 * lin(t, 4.4, 4.8);
+      S.particles = { kind: 'chips', t0: 4.5, t1: 11, o: () => [20.3, 30, 0], color: 0xfbe7bf, life: .9, size: 2.1 };
+      S.labels = lab([6, win(t, .2, 2.6)]);
+      if (t < 2.5) S.hl.collar = 1;
+    }
+  },
+  {
+    id: 'hammer', title: '해머드릴링', fig: 'DCD799', dur: 15, hud: ['mode', 'speed', 'trig'],
+    intro: '타격식 드릴링 전용으로 정격이 매겨진 카바이드 팁이나 석조용 드릴 비트를 사용합니다.',
+    caps: [[0, '1. 모드 선택기 ⑥을 망치 기호에 맞춥니다.'], [2.8, '2. 트리거를 당기면서 해머가 지나치게 튀거나 비트가 들뜨지 않을 정도로만 압력을 가합니다.'], [8.8, '깊은 구멍에서 해머 속도가 떨어지면, 공구를 계속 작동시키며 비트를 부분적으로 당겨 파편을 제거합니다.'], [12.4, '너무 세게 누르면 드릴링 속도가 느려지고 과열됩니다. 비트를 작업면에 직각으로 유지하고 옆으로 힘을 주지 마십시오.']],
+    warn: '이 공구를 장시간 사용하지 마십시오. 해머 동작의 진동은 손과 팔에 해로울 수 있습니다. 장갑을 끼고 자주 쉬십시오.',
+    cam: [{ t: 0, tg: [3.2, 32.2, 0], az: -150, el: 40, d: 26 }, { t: 2.6, tg: [3.2, 32.2, 0], az: -140, el: 42, d: 26 }, { t: 3.6, tg: [11, 25, 0], az: 208, el: 12, d: 80 }, { t: 5.6, tg: [16, 28, 0], az: 224, el: 16, d: 56 }, { t: 15, tg: [13, 26, 0], az: 212, el: 14, d: 70 }],
+    apply(t, S) {
+      held(S); S.bit.type = 'masonry'; S.speed = 1; S.work.type = 'concrete'; S.work.x = 22.5;
+      S.collar = lerp(8, 16, seg(t, .5, 2.6)); S.arrows.collar = win(t, .3, 2.8); S.arrowDir.collar = -1;
+      const d1 = 2.0 * seg(t, 4.4, 8.6), pull = 1.2 * win(t, 8.8, 10.2, .5), d2 = 1.0 * seg(t, 10.2, 12.0);
+      S.tool.x = t < 4.2 ? lerp(-4, .75, seg(t, 2.8, 4.1)) : t < 12.4 ? .75 + d1 - pull + d2 : lerp(3.75, -3, seg(t, 12.6, 14.2));
+      const trig = x => win(x, 4.2, 12.4, .3);
+      S.trigger = trig(t); S.dir = 1; S.spin = integ(x => trig(x) * 20, t);
+      S.vib = t < 12.4 ? S.trigger : 0;
+      S.work.hole = .52 * lin(t, 4.4, 4.8);
+      S.particles = { kind: 'dust', t0: 4.5, t1: 12.2, o: () => [22.3, 30, 0], color: 0xece8de, life: 1.1, size: 1.5 };
+      S.labels = lab([6, win(t, .2, 2.8)]);
+      if (t < 2.8) S.hl.collar = 1;
+    }
+  },
+  {
+    id: 'care', title: '청소와 유지 보수', fig: '유지 보수', dur: 11, hud: [],
+    intro: '최소한의 관리로 오래 쓰도록 설계되었으며, 정기적인 청소로 성능을 유지합니다.',
+    caps: [[0, '청소하기 전에 반드시 배터리 팩을 분리합니다.'], [2.4, '통풍구는 건조하고 부드러운 비금속 브러시나 알맞은 진공 청소기로 청소합니다.'], [6.5, '물이나 세척제를 쓰지 말고, 승인된 보안경과 방진 마스크를 착용하십시오.'], [8.6, '윤활 작업은 따로 필요하지 않습니다. 정비·수리는 공인 서비스센터에 맡기십시오.']],
+    warn: '비금속 부품을 청소할 때 용제 등 강한 화학약품을 쓰지 마십시오. 물과 순한 비누를 적신 천으로만 닦고, 공구 내부에 액체가 들어가거나 부품을 액체에 담그지 마십시오.',
+    cam: [{ t: 0, tg: [3, 16, 0], az: 150, el: 12, d: 66 }, { t: 2.2, tg: [-3.5, 25.8, -1.5], az: 220, el: 18, d: 38 }, { t: 11, tg: [-3.5, 25.8, -1.5], az: 232, el: 20, d: 36 }],
+    apply(t, S) {
+      S.tool.y = 26;
+      S.bat.dx = 13 * seg(t, .3, 1.4); S.bat.dy = -6.6 * seg(t, 1.4, 2.0); S.arrows.batOut = win(t, .2, 1.5);
+      S.brush = win(t, 2.2, 7.2, .5);
+      const by = x => 1.3 * Math.sin((x - 2.2) * 5.2);
+      S.brushY = by(t);
+      S.particles = { kind: 'brush', t0: 2.6, t1: 7.0, o: x => [-4.05, 26.2 + by(x), -2.9], color: 0x8a857c, life: 1.4, size: .6 };
+      S.labels = lab(['vent', lin(t, 2.2, 2.6)], ['bat0', win(t, 0, 2.2)]);
+      if (t > 2.2 && t < 7.2) S.hl.vent = 1;
+    }
+  },
+];
+
+/* ================================================================
+   state -> scene
+   ================================================================ */
+function defaults() {
+  return {
+    tool: { x: 0, y: 19.3, z: 0 }, bat: { dx: 0, dy: 0 }, release: 0, gauge: [0, 0, 0], gaugePress: 0,
+    sleeve: 0, jaw: .12, spin: 0, collar: 1, speed: 1, trigger: 0, dir: 0, led: 0, ledCount: null, darken: 0,
+    hook: { off: 0, screw: 0, rot: 0 }, clip: { on: false, off: 1, screw: 1, rot: 0 },
+    bit: { type: null, ins: 1 }, hands: { r: 0, l: 0 },
+    work: { type: null, x: 20.5, screwAdv: 0, screwRot: 0, hole: 0 }, particles: null,
+    brush: 0, brushY: 0, arrows: {}, arrowDir: {}, hl: {}, labels: [], bubble: null, vib: 0,
+  };
+}
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new V3(), _p = new V3(), _e = new THREE.Euler();
+let lastBubble = '';
+function applyState(S, t, clock) {
+  const vx = S.vib ? S.vib * .07 * Math.sin(clock * TAU * 23) : 0, vy = S.vib ? S.vib * .035 * Math.sin(clock * TAU * 31) : 0;
+  toolRoot.position.set(S.tool.x + vx, S.tool.y + vy, S.tool.z);
+  T.bat.position.set(S.bat.dx, S.bat.dy, 0);
+  T.release.position.set(5.6 - .8 * .2 * S.release, -14.87 - .6 * .2 * S.release, 0);
+  T.gbtn.position.x = 6.32 - .1 * S.gaugePress;
+  T.leds.forEach((m, i) => m.emissiveIntensity = S.gauge[i] * 1.5);
+  T.spindle.rotation.x = S.spin; T.sleeve.rotation.x = S.sleeve;
+  const tipX = 12.0 - (S.jaw - .12) * 1.3;
+  T.jaws.forEach(j => j.position.set(tipX, S.jaw + .17, 0));
+  T.collar.rotation.x = -S.collar * 18 * D2R;
+  T.knob.position.x = lerp(-2.05, -.85, S.speed);
+  T.trigger.position.x = -.9 * S.trigger;
+  T.fwdrev.position.z = -.42 * S.dir;
+  T.lensM.emissiveIntensity = .05 + S.led * 5;
+  T.spot.intensity = S.led * 9; T.coneM.opacity = .14 * S.led; T.cone.visible = S.led > .01;
+  // lighting for the work-light scene
+  const d = S.darken;
+  hemi.intensity = lerp(.65, .06, d); key.intensity = lerp(2.3, .12, d); rim.intensity = lerp(1.1, .1, d);
+  scene.environmentIntensity = lerp(.85, .1, d);
+  scene.background.copy(bgBase).lerp(bgDark, d * .85);
+  // hook + clip
+  T.hook.position.z = -7 * S.hook.off;
+  T.screwA.position.set(-1.2, -13.0, -(3.97 + 5 * S.hook.screw) - 7 * S.hook.off); T.screwA.rotation.z = S.hook.rot;
+  T.clip.visible = T.screwB.visible = S.clip.on;
+  T.clip.position.z = 7 * S.clip.off;
+  T.screwB.position.set(-1.2, -13.0, 4.68 + 5 * S.clip.screw + 7 * S.clip.off); T.screwB.rotation.z = S.clip.rot;
+  // bit
+  for (const [k, b] of Object.entries(T.bits)) b.visible = S.bit.type === k;
+  T.bitHolder.position.x = lerp(21.75, 9.75, S.bit.ins);
+  // hands
+  H.handR.visible = S.hands.r > .01; H.handL.visible = S.hands.l > .01;
+  H.skinR.opacity = S.hands.r; H.skinR.depthWrite = S.hands.r > .98;
+  H.skinL.opacity = S.hands.l; H.skinL.depthWrite = S.hands.l > .98;
+  H.index.position.x = -.9 * S.trigger;
+  // workpieces (world space)
+  const wy = S.tool.y;
+  W.board.visible = S.work.type === 'board' || S.work.type === 'screw';
+  W.board.position.set(S.work.x + 2, 21, 0);
+  W.concrete.visible = S.work.type === 'concrete';
+  W.concrete.position.set(S.work.x + 7.5, 23, 0);
+  W.hole.visible = S.work.hole > .01; W.hole.position.set(S.work.x - .02, wy, 0); W.hole.scale.setScalar(Math.max(.01, S.work.hole));
+  W.crater.visible = S.work.type === 'concrete' && S.work.hole > .01; W.crater.position.set(S.work.x - .015, wy, 0); W.crater.scale.setScalar(S.work.hole * 1.3);
+  W.screw.visible = S.work.type === 'screw';
+  W.screw.position.set(S.work.x - 4.5 + S.work.screwAdv, wy, 0); W.screw.rotation.x = S.work.screwRot;
+  W.brush.visible = S.brush > .01; W.brush.position.set(-4.05, .2 + S.brushY, -3.05 - (1 - S.brush) * 6);
+  // particles
+  const P = S.particles;
+  for (let i = 0; i < W.PN; i++) {
+    let vis = false;
+    if (P) {
+      const r = W.PR[i], spawn = P.t0 + (i / W.PN) * (P.t1 - P.t0) + r[4] * .05, age = t - spawn, life = P.life;
+      if (age >= 0 && age <= life) {
+        vis = true; let vX, vY, vZ, g = -55;
+        if (P.kind === 'chips') { vX = -(6 + 14 * r[0]); const a = r[1] * TAU, sp = 6 + 10 * r[2]; vY = Math.cos(a) * sp + 4; vZ = Math.sin(a) * sp; }
+        else if (P.kind === 'dust') { vX = -(4 + 10 * r[0]); const a = r[1] * TAU, sp = 3 + 9 * r[2]; vY = Math.cos(a) * sp + 3; vZ = Math.sin(a) * sp; g = -30; }
+        else { vX = (r[0] - .5) * 4; vY = -(1 + 3 * r[1]); vZ = -(1 + 4 * r[2]); g = -18; }
+        const o = P.o(spawn);
+        _p.set(o[0] + vX * age, o[1] + vY * age + .5 * g * age * age, o[2] + vZ * age);
+        const sc = P.size * (.6 + .8 * r[3]) * (1 - .6 * age / life);
+        _s.set(sc, P.kind === 'chips' ? sc * .35 : sc, sc);
+        _e.set(r[0] * 9 + age * 8, r[1] * 9 + age * 6, r[2] * 9); _q.setFromEuler(_e);
+      }
+    }
+    if (!vis) { _s.set(0, 0, 0); _p.set(0, -999, 0); _q.identity(); }
+    _m.compose(_p, _q, _s); W.pMesh.setMatrixAt(i, _m);
+  }
+  W.pMesh.instanceMatrix.needsUpdate = true;
+  if (P) W.pMat.color.setHex(P.color);
+  // arrows
+  for (const [k, a] of Object.entries(ARROWS)) {
+    const o = clamp(S.arrows[k] || 0); a.visible = o > .01; a.userData.mat.opacity = o * .95;
+  }
+  ARROWS.sleeve.scale.z = S.arrowDir.sleeve || 1;
+  ARROWS.collar.scale.z = S.arrowDir.collar || 1;
+  ARROWS.spin.scale.z = S.arrowDir.spin || 1;
+  ARROWS.spin.rotation.x = clock * 2.2 * (S.arrowDir.spin || 1);
+  // callouts
+  const shown = new Map(S.labels.map(o => [String(o.id), o.k]));
+  for (const [id, c] of Object.entries(CALLOUTS)) {
+    const k = shown.get(id) || 0;
+    c.obj.visible = k > .01; c.line.visible = k > .01; c.el.style.opacity = k; c.lm.opacity = k * .9;
+  }
+  if (S.bubble) {
+    bubble.visible = true; bubble.position.set(...S.bubble.p);
+    if (lastBubble !== S.bubble.text) { bubbleEl.textContent = S.bubble.text; lastBubble = S.bubble.text; }
+    bubbleEl.style.opacity = S.bubble.k; bubbleEl.style.transform = `scale(${.85 + .15 * S.bubble.k})`;
+  } else bubble.visible = false;
+  // highlight (pulsing emissive)
+  const pulse = .55 + .45 * Math.sin(clock * 5.5);
+  for (const [k, set] of Object.entries(partMats)) {
+    const h = S.hl[k] || 0;
+    for (const m of set) { m.emissive.setHex(0xffb31a); m.emissiveIntensity = h * (.035 + .085 * pulse); }
+  }
+}
+
+/* ================================================================
+   camera
+   ================================================================ */
+function camAt(step, t) {
+  const K = step.cam; let a = K[0], b = K[0], k = 0;
+  if (t >= K[K.length - 1].t) a = b = K[K.length - 1];
+  else for (let i = 0; i < K.length - 1; i++) if (t >= K[i].t && t < K[i + 1].t) { a = K[i]; b = K[i + 1]; k = ease((t - a.t) / (b.t - a.t)); break; }
+  const az = lerp(a.az, b.az, k) * D2R, el = lerp(a.el, b.el, k) * D2R;
+  const aspect = camera.aspect || 1.5;
+  const d = lerp(a.d, b.d, k) * Math.pow(Math.max(1, 1.5 / aspect), .95);
+  const tg = new V3(lerp(a.tg[0], b.tg[0], k), lerp(a.tg[1], b.tg[1], k), lerp(a.tg[2], b.tg[2], k));
+  const pos = new V3(tg.x + d * Math.cos(el) * Math.sin(az), tg.y + d * Math.sin(el), tg.z + d * Math.cos(el) * Math.cos(az));
+  return { pos, tg };
+}
+
+/* ================================================================
+   UI
+   ================================================================ */
+const elSteps = $('#steps'), elDetail = $('#detail'), elHud = $('#hud');
+const btnPlay = $('#play'), scrub = $('#scrub'), elTime = $('#time'), chain = $('#chain'), recenter = $('#recenter');
+const stepBtns = STEPS.map((s, i) => {
+  const li = document.createElement('li');
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'step';
+  b.innerHTML = `<span class="n">${i + 1}</span><span class="tt">${s.title}</span><span class="fg">${s.fig}</span>`;
+  b.addEventListener('click', () => { goStep(i); setPlaying(true); });
+  li.append(b); elSteps.append(li); return b;
+});
+let stepIdx = 0, t = 0, playing = true, userCam = false, blend = null, capEls = [];
+function renderDetail() {
+  const s = STEPS[stepIdx];
+  elDetail.innerHTML = `<header><span class="figtag">${s.fig}</span><h2>${stepIdx + 1}. ${s.title}</h2><p class="intro">${s.intro}</p></header>
+    <ol class="caps">${s.caps.map(([ct, tx]) => `<li tabindex="0" data-t="${ct}"><span class="ts">${ct.toFixed(1)}s</span><span>${tx}</span></li>`).join('')}</ol>
+    ${s.warn ? `<div class="box warn"><b>▲ 경고</b>${s.warn}</div>` : ''}
+    ${s.note ? `<div class="box note"><b>참고</b>${s.note}</div>` : ''}`;
+  capEls = [...elDetail.querySelectorAll('.caps li')];
+  capEls.forEach(li => {
+    const jump = () => { t = +li.dataset.t + .01; };
+    li.addEventListener('click', jump);
+    li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); jump(); } });
+  });
+  stepBtns.forEach((b, i) => { b.toggleAttribute('aria-current', false); if (i === stepIdx) b.setAttribute('aria-current', 'step'); b.classList.toggle('done', i < stepIdx); });
+  const cur = stepBtns[stepIdx]; if (cur && cur.scrollIntoView && innerWidth <= 880) cur.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+}
+function goStep(i) {
+  stepIdx = (i + STEPS.length) % STEPS.length; t = 0; userCam = false; recenter.hidden = true;
+  blend = { pos: camera.position.clone(), tg: controls.target.clone(), start: performance.now() };
+  renderDetail();
+}
+function setPlaying(p) {
+  playing = p; btnPlay.setAttribute('aria-label', p ? '일시정지' : '재생');
+  $('#playIcon').innerHTML = p ? '<path d="M4 2h3v12H4zM9 2h3v12H9z"/>' : '<path d="M4 2.5v11L13.5 8z"/>';
+}
+btnPlay.addEventListener('click', () => { if (!playing && t >= STEPS[stepIdx].dur - .01) t = 0; setPlaying(!playing); });
+$('#prev').addEventListener('click', () => goStep(stepIdx - 1));
+$('#next').addEventListener('click', () => goStep(stepIdx + 1));
+let wasPlaying = false;
+scrub.addEventListener('pointerdown', () => { wasPlaying = playing; setPlaying(false); });
+scrub.addEventListener('input', () => { t = scrub.value / 1000 * STEPS[stepIdx].dur; });
+scrub.addEventListener('change', () => { if (wasPlaying) setPlaying(true); wasPlaying = false; });
+controls.addEventListener('start', () => { userCam = true; blend = null; recenter.hidden = false; });
+recenter.addEventListener('click', () => { userCam = false; recenter.hidden = true; blend = { pos: camera.position.clone(), tg: controls.target.clone(), start: performance.now() }; });
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (e.code === 'Space') { e.preventDefault(); btnPlay.click(); }
+  else if (e.key === 'ArrowRight') goStep(stepIdx + 1);
+  else if (e.key === 'ArrowLeft') goStep(stepIdx - 1);
+});
+
+const modeName = c => { const i = Math.round(c); return i <= 0 ? '드릴링' : i >= 16 ? '해머드릴링' : `나사 조이기 · 토크 ${i}`; };
+let hudKey = '';
+function updateHud(step, S) {
+  const items = [];
+  for (const h of step.hud) {
+    if (h === 'mode') items.push(['모드', modeName(S.collar), false]);
+    if (h === 'speed') items.push(['속도', S.speed < .5 ? '1단 · 0–450 rpm' : '2단 · 0–1,650 rpm', false]);
+    if (h === 'dir') items.push(['회전', S.dir > .5 ? '정회전 (시계 방향)' : S.dir < -.5 ? '역회전 (시계 반대)' : '중앙 · 잠금', false]);
+    if (h === 'trig') {
+      const max = S.speed < .5 ? 450 : 1650;
+      items.push(['트리거', `${Math.round(S.trigger * 100)}% · ${Math.round(S.trigger * max).toLocaleString('ko-KR')} rpm`, S.trigger > .02]);
+      if (Math.round(S.collar) >= 16) items.push(['타격', `${Math.round(S.trigger * (S.speed < .5 ? 7650 : 28050)).toLocaleString('ko-KR')} bpm`, S.trigger > .02]);
+    }
+    if (h === 'led') items.push(['작업등', S.led > .5 ? (S.ledCount ? `켜짐 · ${S.ledCount}초 후 꺼짐` : '켜짐') : '꺼짐', S.led > .5]);
+  }
+  const k = JSON.stringify(items);
+  if (k !== hudKey) { hudKey = k; elHud.innerHTML = items.map(([a, b, hot]) => `<span class="chip${hot ? ' hot' : ''}"><i>${a}</i><strong>${b}</strong></span>`).join(''); }
+}
+let lastCap = -1, lastScrub = -1;
+function updateUI(step, S) {
+  const v = Math.round(t / step.dur * 1000); if (v !== lastScrub) { scrub.value = v; lastScrub = v; }
+  elTime.textContent = `${t.toFixed(1)} / ${step.dur.toFixed(1)}s`;
+  let ci = 0; step.caps.forEach(([ct], i) => { if (t >= ct) ci = i; });
+  const key = stepIdx * 100 + ci;
+  if (key !== lastCap) { lastCap = key; capEls.forEach((li, i) => { li.classList.toggle('now', i === ci); li.classList.toggle('past', i < ci); }); }
+  updateHud(step, S);
+}
+
+/* ================================================================
+   theme + resize + loop
+   ================================================================ */
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement);
+  bgBase.set(cs.getPropertyValue('--stage').trim() || '#dfe3e7');
+  const dark = (cs.getPropertyValue('color-scheme') || '').includes('dark') || bgBase.getHSL({}).l < .4;
+  floorMat.opacity = dark ? .38 : .2;
+}
+readTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', readTheme);
+new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); labelRenderer.setSize(w, h);
+  camera.aspect = w / Math.max(1, h); camera.updateProjectionMatrix();
+  stage.classList.toggle('compact', w < 560);
+}
+new ResizeObserver(resize).observe(stage); resize();
+
+function renderAt(i, time, clock) {
+  const step = STEPS[i]; const S = defaults(); step.apply(time, S); applyState(S, time, clock);
+  if (!userCam) {
+    const c = camAt(step, time);
+    if (blend) {
+      const k = ease((performance.now() - blend.start) / 900);
+      c.pos.lerpVectors(blend.pos, c.pos, k); c.tg.lerpVectors(blend.tg, c.tg, k);
+      if (k >= 1) blend = null;
+    }
+    camera.position.copy(c.pos); controls.target.copy(c.tg); camera.lookAt(c.tg);
+  } else controls.update();
+  renderer.render(scene, camera); labelRenderer.render(scene, camera);
+  return S;
+}
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let last = performance.now(), frozen = false;
+function frame(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (!frozen) {
+    const step = STEPS[stepIdx];
+    if (playing) {
+      t += dt;
+      if (t >= step.dur) {
+        if (chain.checked && stepIdx < STEPS.length - 1) goStep(stepIdx + 1);
+        else { t = step.dur; setPlaying(false); }
+      }
+    }
+    const S = renderAt(stepIdx, t, t);
+    updateUI(STEPS[stepIdx], S);
+  }
+  requestAnimationFrame(frame);
+}
+renderDetail();
+if (reduceMotion) setPlaying(false);
+$('#loading').remove();
+requestAnimationFrame(frame);
+
+/* hooks for automation (screenshots, video frames, GLB export) */
+window.__guide = {
+  steps: STEPS.map(s => ({ id: s.id, title: s.title, dur: s.dur })),
+  freeze(v = true) { frozen = v; },
+  show(i, time, cam) {
+    stepIdx = i; t = time; userCam = false; blend = null; renderDetail();
+    const keep = STEPS[i].cam; if (cam) STEPS[i].cam = [{ t: 0, ...cam }];
+    const S = renderAt(i, time, time); updateUI(STEPS[i], S); STEPS[i].cam = keep;
+  },
+  async exportGLB() {
+    const { GLTFExporter } = await import('three/addons/exporters/GLTFExporter.js');
+    this.show(0, 15.9);
+    const hide = [H.handR, H.handL, T.spot, T.spot.target, T.cone, W.brush, bubble, ...Object.values(ARROWS), ...Object.values(CALLOUTS).flatMap(c => [c.obj, c.line])];
+    const prev = hide.map(o => o.visible); hide.forEach(o => o.visible = false);
+    const vib = toolRoot.position.clone(); toolRoot.position.set(0, 0, 0); toolRoot.scale.setScalar(0.01); // export in metres
+    partMats && Object.values(partMats).forEach(set => set.forEach(m => m.emissiveIntensity = 0));
+    const buf = await new GLTFExporter().parseAsync(toolRoot, { binary: true, onlyVisible: true });
+    toolRoot.scale.setScalar(1); toolRoot.position.copy(vib); hide.forEach((o, i) => o.visible = prev[i]);
+    return Array.from(new Uint8Array(buf));
+  },
+};
+</script>
+</body>
+</html>
